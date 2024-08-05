@@ -412,16 +412,18 @@ def get_last_chapter(book_number, verses_count):
 
 # Normalize book name by removing spaces and periods
 def normalize_book_name(book_name):
-    return re.sub(r'[\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\u200C\u200D\u2060\uFEFF]+|\.', '', book_name)
+    book_name = re.sub(r'[\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\u200C\u200D\u2060\uFEFF]+|\.', '', book_name)
+    return book_name
 
-# A reference could be copied from somewhere and contain different spaces. Replace them with a regular space
+# A reference could be copied from somewhere and contain different spaces and dashes.
 def replace_funny_spaces(string):
-    return re.sub(r'[\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\u200C\u200D\u2060\uFEFF]+', ' ', string)
+    string = re.sub(r'[\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\u200C\u200D\u2060\uFEFF]+', ' ', string)
+    string = re.sub(r'[\u2010\u2013\u2014-]', '-', string)
+    return string
 
 # Parse a reference part to get book, chapter, and verse
 def parse_reference_part(part, mapping, verses_count, abbrs_mapping, prev_book=None, prev_chapter=None, prev_verse=None, prev_was_verse=False, book_explicit=False):
-    # First, get rid of funny spaces and split into tokens
-    tokens = replace_funny_spaces(part).strip().split()
+    tokens = part.strip().split()
 
     if not tokens:
         raise ValueError("Invalid reference format")
@@ -726,8 +728,6 @@ def format_output(format_string, data, abbrs_file_path, module_name):
     for key, value in format_map.items():
         if key in result:
             result = result.replace(key, str(value))
-            result = re.sub(r'\\t', '\t', result)
-            result = re.sub(r'\\n', '\n', result)
 
     book_names = get_book_name(abbrs_file_path, book_number)
     # Handle custom format specifiers
@@ -737,6 +737,8 @@ def format_output(format_string, data, abbrs_file_path, module_name):
     result = result.replace('%t', zap_text(raw_text))
     result = result.replace('%A', ansi_format_text(raw_text))
     result = result.replace('%Z', ansi_format_no_strong(raw_text))
+    result = re.sub(r'\\t', '\t', result)
+    result = re.sub(r'\\n', '\n', result)
 
     return result
 
@@ -1002,7 +1004,7 @@ def main():
 
     # Handle the --reference argument
     if args.reference:
-        reference = args.reference
+        reference = replace_funny_spaces(args.reference)
         allverses_file_path = ensure_allverses_file(module_name, module_path)
         abbrs_file_path = ensure_abbrs_file(module_name, module_path)
         verses_count = load_verses_count(allverses_file_path)
