@@ -414,11 +414,13 @@ def get_last_chapter(book_number, verses_count):
 def normalize_book_name(book_name):
     return re.sub(r'[\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\u200C\u200D\u2060\uFEFF]+|\.', '', book_name)
 
+# A reference could be copied from somewhere and contain different spaces. Replace them with a regular space
 def replace_funny_spaces(string):
     return re.sub(r'[\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\u200C\u200D\u2060\uFEFF]+', ' ', string)
 
 # Parse a reference part to get book, chapter, and verse
 def parse_reference_part(part, mapping, verses_count, abbrs_mapping, prev_book=None, prev_chapter=None, prev_verse=None, prev_was_verse=False, book_explicit=False):
+    # First, get rid of funny spaces and split into tokens
     tokens = replace_funny_spaces(part).strip().split()
 
     if not tokens:
@@ -650,9 +652,9 @@ def query_verses(module_path, ranges):
 
     def query_single_verse(book, chapter, verse):
         cur.execute("""
-            SELECT book_number, chapter, verse, text 
-            FROM verses 
-            WHERE book_number=? AND chapter=? AND verse=? 
+            SELECT book_number, chapter, verse, text
+            FROM verses
+            WHERE book_number=? AND chapter=? AND verse=?
             ORDER BY book_number, chapter, verse
         """, (book, chapter, verse))
         return cur.fetchall()
@@ -664,9 +666,9 @@ def query_verses(module_path, ranges):
             end_verse = start_verse
 
         cur.execute("""
-            SELECT book_number, chapter, verse, text 
-            FROM verses 
-            WHERE book_number=? AND (chapter > ? OR (chapter = ? AND verse >= ?)) 
+            SELECT book_number, chapter, verse, text
+            FROM verses
+            WHERE book_number=? AND (chapter > ? OR (chapter = ? AND verse >= ?))
             AND (chapter < ? OR (chapter = ? AND verse <= ?))
             ORDER BY book_number, chapter, verse
         """, (book, start_chapter, start_chapter, start_verse, end_chapter, end_chapter, end_verse))
@@ -864,8 +866,8 @@ def main():
     parser.add_argument(
         "-a", "--abbr",
         help=f"read Bible book names and abbreviations from a non-default file. \
-        With {start_bold}{start_italics}--abbr rst{reset_to_normal} \
-        a file named {start_bold}{start_italics}rst_mapping.json{reset_to_normal} \
+        With {start_bold}{start_italics}--abbr uk{reset_to_normal} \
+        a file named {start_bold}{start_italics}uk_mapping.json{reset_to_normal} \
         located in the configuration folder will be used"
     )
     parser.add_argument(
@@ -876,12 +878,16 @@ def main():
     parser.add_argument(
         "-f", "--format",
         help="format output with %%-prefixed format sting. \
-        Available format strings: f, a, c, v, t, T, z, A, Z, m"
+        Available placeholders: f, a, c, v, t, T, z, A, Z, m"
+    )
+    parser.add_argument(
+        "-F", "--save-format",
+        help="specified format string will be applied and saved as default"
     )
     parser.add_argument(
         "--helpformat",
         action="store_true",
-        help="detailed info on available format strings"
+        help="detailed info on the format string"
     )
     parser.add_argument(
         "--noansi",
@@ -926,10 +932,23 @@ def main():
         list_sqlite_files(modules_path)
         return
 
+    # Handle the --format argument
+    format_string = None
+    if args.format:
+        format_string = args.format
+    if not format_string:
+        format_string = config.get('format_string') if config.get('format_string') else "%f %c:%v: %t (%m)"
+
+    # Handle the --save-format argument
+    if args.save_format:
+        format_string = args.save_format
+        config['format_string'] = format_string
+        write_config(config)
+
     #Handle --helpformat argument
     if args.helpformat:
         helpformat_message = textwrap.dedent(f"\n\
-            Available format strings:\n\
+            Available placeholders for the format string:\n\
             \t  %f \t full book name\n\
             \t  %a \t abbreviated book name\n\
             \t  %b \t book number as per MyBible format specifications\n\
@@ -941,27 +960,17 @@ def main():
             \t  %A \t text of the verse with color output for console; Strong numbers are included\n\
             \t  %Z \t the same as above, but without Strong numbers\n\
             \t  %m \t module name\n\
-            Default format is {start_bold}%f %c:%v: %t (%m){reset_to_normal}\n\
-            Each verse in the output is printed on a new line and is formatted individually."
+            Current default format is {start_bold}{format_string}{reset_to_normal}\n\
+            To save a new default, provide the format with {start_bold}-F{reset_to_normal}\n\
+            Format string may contain {start_bold}\t{reset_to_normal} and {start_bold}\n{reset_to_normal}\n\
+            Each verse in the output is printed on a new line and is formatted individually"
         )
         print(helpformat_message)
         return
-    # Determine book numbers to resolve the reference based on non-default file
-    if args.abbr:
-        mapping_file = os.path.join(get_default_config_path(), f'{args.abbr}_mapping.json')
-    else:
-        mapping_file = BOOKMAPPING_FILE
 
     # Ensure required arguments if --list-modules is not used
     def report_args_error():
         parser.error('The arguments -b/--module_name and -r/--reference are required unless -L/--list-modules is used.')
-
-    # Handle the --format argument
-    format_string = None
-    if args.format:
-        format_string = args.format
-    if not format_string:
-        format_string = "%f %c:%v: %t (%m)"
 
     # Handle the --module_name argument
     if args.module_name:
@@ -979,7 +988,13 @@ def main():
         report_args_error()
         return
 
-    # Handle the --self-abbr argument
+    # Handle the --abbr argument (non-default mapping of book names and abbreviations for the reference)
+    if args.abbr:
+        mapping_file = os.path.join(get_default_config_path(), f'{args.abbr}_mapping.json')
+    else:
+        mapping_file = BOOKMAPPING_FILE
+
+    # Handle the --self-abbr argument (book names and abbreviations for the reference are taken from the module)
     if args.self_abbr:
         mapping_file = ensure_abbrs_file(module_name, module_path)
         if not os.path.exists(mapping_file):
