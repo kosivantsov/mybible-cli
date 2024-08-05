@@ -397,8 +397,9 @@ def load_verses_count(filename):
 # Helper function to get book number
 def get_book_number(book_name, mapping):
     for book_number, names in mapping.items():
-        if book_name in names:
-            return int(book_number)
+        for name in names:
+            if book_name == normalize_book_name(name):
+                return int(book_number)
     raise ValueError(f"Unknown book name: {book_name}")
 
 # Helper function to get the last verse of a chapter
@@ -411,11 +412,15 @@ def get_last_chapter(book_number, verses_count):
 
 # Normalize book name by removing spaces and periods
 def normalize_book_name(book_name):
-    return re.sub(r'\s+|\.', '', book_name)
+    return re.sub(r'[\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\u200C\u200D\u2060\uFEFF]+|\.', '', book_name)
+
+def replace_funny_spaces(string):
+    return re.sub(r'[\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\u200C\u200D\u2060\uFEFF]+', ' ', string)
 
 # Parse a reference part to get book, chapter, and verse
 def parse_reference_part(part, mapping, verses_count, abbrs_mapping, prev_book=None, prev_chapter=None, prev_verse=None, prev_was_verse=False, book_explicit=False):
-    tokens = part.strip().split()
+    tokens = replace_funny_spaces(part).strip().split()
+
     if not tokens:
         raise ValueError("Invalid reference format")
 
@@ -837,7 +842,7 @@ def ansi_format_no_strong(string):
 def main():
     parser = argparse.ArgumentParser(
         description="Command line tool to query MyBible modules.",
-        epilog=f"Any parameter containing spaces should be quoted: {start_bold}mybible-cli -b \"NIV'11\" -r \"1 Pet 1:1\"{reset_to_normal}"
+        epilog=f"Parameter containing several tokens should be quoted: {start_bold}mybible-cli -b \"NIV'11\" -r \"1 Pet 1:1\"{reset_to_normal}"
     )
     parser.add_argument(
         "-p", "--path",
@@ -849,7 +854,7 @@ def main():
         help="list available MyBilbe modules"
     )
     parser.add_argument(
-        "-m", "--module_name",
+        "-m", "--module-name",
         help="name of the MyBible module to use"
     )
     parser.add_argument(
@@ -862,6 +867,11 @@ def main():
         With {start_bold}{start_italics}--abbr rst{reset_to_normal} \
         a file named {start_bold}{start_italics}rst_mapping.json{reset_to_normal} \
         located in the configuration folder will be used"
+    )
+    parser.add_argument(
+        "-A", "--self-abbr",
+        action="store_true",
+        help=f"read Bible book names and abbreviations from the module itself"
     )
     parser.add_argument(
         "-f", "--format",
@@ -918,7 +928,7 @@ def main():
 
     #Handle --helpformat argument
     if args.helpformat:
-        helpformat_message = textwrap.dedent("\n\
+        helpformat_message = textwrap.dedent(f"\n\
             Available format strings:\n\
             \t  %f \t full book name\n\
             \t  %a \t abbreviated book name\n\
@@ -931,7 +941,7 @@ def main():
             \t  %A \t text of the verse with color output for console; Strong numbers are included\n\
             \t  %Z \t the same as above, but without Strong numbers\n\
             \t  %m \t module name\n\
-            Default format is '%f %c:%v: %t (%m)'\n\
+            Default format is {start_bold}%f %c:%v: %t (%m){reset_to_normal}\n\
             Each verse in the output is printed on a new line and is formatted individually."
         )
         print(helpformat_message)
@@ -953,7 +963,7 @@ def main():
     if not format_string:
         format_string = "%f %c:%v: %t (%m)"
 
-        # Handle the --module_name argument
+    # Handle the --module_name argument
     if args.module_name:
         module_name = args.module_name
         module_file = None
@@ -968,6 +978,12 @@ def main():
     else:
         report_args_error()
         return
+
+    # Handle the --self-abbr argument
+    if args.self_abbr:
+        mapping_file = ensure_abbrs_file(module_name, module_path)
+        if not os.path.exists(mapping_file):
+            mapping_file = BOOKMAPPING_FILE
 
     # Handle the --reference argument
     if args.reference:
