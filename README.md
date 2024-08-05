@@ -84,6 +84,6 @@ Options:
   --helpformat
         Detailed info on the format string
 
---noansi
+  --noansi
         Clears out any ANSI escape sequences in the Bible verses output (if %A or %Z were used in the format string)
 ```
