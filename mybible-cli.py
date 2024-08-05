@@ -910,7 +910,7 @@ def main():
         return path
 
     modules_path = args.path if args.path else config.get('modules_path', '')
-    if args.path or not modules_path:
+    if args.path or not modules_path and not args.helpformat:
         # Validate the path to the modules (if -p is specified or no/wrong value is recorded in the config)
         while not validate_path(modules_path):
             if not os.path.isdir(modules_path):
@@ -962,7 +962,7 @@ def main():
             \t  %m \t module name\n\
             Current default format is {start_bold}{format_string}{reset_to_normal}\n\
             To save a new default, provide the format with {start_bold}-F{reset_to_normal}\n\
-            Format string may contain {start_bold}\t{reset_to_normal} and {start_bold}\n{reset_to_normal}\n\
+            Format string may contain {start_bold}\\t{reset_to_normal} and {start_bold}\\n{reset_to_normal}\n\
             Each verse in the output is printed on a new line and is formatted individually"
         )
         print(helpformat_message)
