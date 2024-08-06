@@ -32,7 +32,7 @@ The script outputs each verse on a separate line and format it using a format st
 To learn what each placeholder means, run `mybible-cli --helpformat`.
 
 The default format is `%f %c:%v: %t (%m)` (full book name, chapter:verse\: text without most MyBible markup, module name in parenthesis): `John 11:35: Jesus wept. (KJV+)`.
-A format string specified with `-f` is applied only once. With `-F` the specified format string will be saved as default and used when no format string is specified.
+A format string specified with `-f` is applied only once. With `-F`, the specified format string will be saved as default and used when no format string is given explicitly.
 
 Text of the reference can be output in five different ways:
 1. `%T`- raw text with all the mark up as in the module itself
