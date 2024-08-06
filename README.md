@@ -1,7 +1,7 @@
 # About
 
 `mybible-cli.py` is a command line utility to query [MyBible.zone](https://mybible.zone/en/) modules. It has been inspired by [diatheke](https://wiki.crosswire.org/Frontends:Diatheke) – a command line utility for [Crosswire Sword](http://www.crosswire.org/sword/index.jsp) modules.
-The main goal of `mybible-cli.py` is only to get the required text, not to perform search or analyze it, as there are other tools that can do that. The output of the tool can be piped, so there are limitless possibilities to do whatever is needed with the output text.
+The main goal of `mybible-cli.py` is only to get the required text, not to perform search or analyze the matched data, as there are other tools that can do that. The output of the tool can be piped, so there are limitless possibilities to do whatever is needed with the output text.
 Though MyBible module format specification describes more than one module type, the script work only with Bible modules. Any other modules (commentaries, devotions, plans, etc.) will be invisible to the script. A good place to get modules is [ph4.org website](https://www.ph4.org/b4_index.php?hd=b).
 
 # Installation
