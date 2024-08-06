@@ -35,19 +35,19 @@ The default format is `%f %c:%v: %t (%m)` (full book name, chapter:verse\: text 
 A format string specified with `-f` is applied only once. With `-F`, the specified format string will be saved as default and used when no format string is given explicitly.
 
 Text of the reference can be output in five different ways:
-1. `%T`- raw text with all the mark up as in the module itself
-1. `%t` - plain text, no Strong numbers, no other markup, but with line breaks and indentations as marked in the module; with notes
-1. `%z` – the same as above, but with those marked line breaks and indentations, and notes removed
+1. `%T`- raw text with all the markup as in the module itself
+1. `%t` - plain text, no Strong's numbers, no other markup, but with line breaks and indentations as marked in the module; with notes
+1. `%z` – the same as above, but without line breaks and indentations marked in the module; notes removed
 1. `%A` – MyBible markup is converted to ANSI escape sequences for pretty output in the terminal. Includes Strong's numbers
 1. `%Z` – the same as above, but without Strong's numbers
 If you need Strong's numbers in the output, but don't want to get the escape sequences (for instance, when you pipe output of the script), there is an option `--noansi`. It has no effect on the output when the text is not formatted with `%A` or `%Z`.
 
 Bible book names and abbreviations are looked up in a list provided within the script. During the first run, the list is saved in the configuration directory and could be used to create custom lookup lists.
 
-If you want to use book names and abbreviations from the module itself, run the script with the `-A` argument. To use a non-default lookup list, use `-a prefix`. In that case the script will try to use `prefix_mapping.json` in the config folder.
-`prefix` can be an arbitrary string, but a file name with that prefix should exist, otherwise the default lookup file is used.
+If you want to use book names and abbreviations from the module itself, run the script with the `-A` argument. To use a non-default lookup list, use `-a prefix`. In that case, the script will try to use `prefix_mapping.json` in the config folder.
+`prefix` can be an arbitrary string but a file name with that prefix should exist, otherwise the default lookup file is used.
 
-The script understands only the colon Bible notation without letters in the chapter and verse part. Blocks of verses are separated by commas or semicolons. Spaces in ranges are permitted. Periods will be ignored.
+The script understands only the colon Bible notation without letters and parenthesis in the chapter and verse part. Blocks of verses should be separated by commas or semicolons. Spaces in ranges are permitted. Periods will be ignored.
 
 
 ``` bash
