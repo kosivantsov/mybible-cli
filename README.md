@@ -26,7 +26,7 @@ When run for the first time (unless `-h`, `--help`, or `--helpformat` arguments 
 
 The most common usage would be calling the script with a module name and a reference to get the required text: `mybible-cli -m "KJV+" -r "Jn 11:35"`. If a parameter passed to the script contains a space or a character that can have a special meaning for the shell, it needs to be quoted.
 
-The script can list all the installed modules (`-L`). The list will be sorted by language and will include Bible modules one. When first invoked, it would take a few moments to query each file and get the required info. That info is then hashed and reused until modules are changed.
+The script can list all the installed modules (`-L`). The list will be sorted by language and will include Bible modules only. When first invoked, it would take a few moments to query each file and get the required info. That info is then hashed and reused until modules are changed.
 
 The script outputs each verse on a separate line and is formatted using a format string with %-prefixed placeholders.
 To learn what each placeholder means, run `mybible-cli --helpformat`.
