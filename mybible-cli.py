@@ -32,92 +32,98 @@ INSTALLED_MODULES_FILE = os.path.join(get_default_config_path(), 'installed_modu
 # Default book mapping content
 DEFAULT_BOOK_MAPPING = \
 {
-    "10": ["Genesis", "Gen", "Ge", "Gn"],
-    "20": ["Exodus", "Exo", "Ex", "Exod"],
-    "30": ["Leviticus", "Lev", "Lv", "Le"],
-    "40": ["Numbers", "Num", "Nu", "Nm", "Nb"],
-    "50": ["Deuteronomy", "Deu", "Dt", "Deut"],
-    "60": ["Joshua", "Josh", "Jos", "Jsh"],
-    "70": ["Judges", "Judg", "Jdg", "Jdgs"],
-    "80": ["Ruth", "Ruth", "Ru", "Rth"],
-    "90": ["1 Samuel", "1Sam", "1 Sm", "1 Sa", "1 S", "I Sam", "I Sm", "I Sa", "I S"],
-    "100": ["2 Samuel", "2Sam", "2 Sm", "2 Sa", "2 S", "II Sam", "II Sm", "II Sa", "II S"],
-    "110": ["1 Kings", "1Kin", "1 Ki", "1 Kgs", "1K", "I Kin", "I Ki", "I Kgs", "I K"],
-    "120": ["2 Kings", "2Kin", "2 Ki", "2 Kgs", "2K", "II Kin", "II Ki", "II Kgs", "II K"],
-    "130": ["1 Chronicles", "1Chr", "1 Ch", "1 Chron", "I Chr", "I Ch", "I Chron"],
-    "140": ["2 Chronicles", "2Chr", "2 Ch", "2 Chron", "II Chr", "II Ch", "II Chron"],
+    "10": ["Genesis", "1 Moses", "I Moses", "Gen", "Ge", "Gn", "1M"],
+    "20": ["Exodus", "2 Moses", "II Moses", "Exo", "Exod", "Ex", "2M"],
+    "30": ["Leviticus", "3 Moses", "III Moses", "Lev", "Lv", "Le", "3M"],
+    "40": ["Numbers", "4 Moses", "IV Moses", "Num", "Nu", "Nm", "Nb", "4M"],
+    "50": ["Deuteronomy", "5 Moses", "V Moses", "Deu", "Deut", "Dt", "5M"],
+    "60": ["Joshua", "Jos", "Josh", "Jsh"],
+    "70": ["Judges", "Jdg", "Judg", "Jdgs"],
+    "80": ["Ruth", "Rut", "Ru", "Rth"],
+    "90": ["1 Samuel", "I Samuel", "1Sa", "1Sam", "1 Sm", "I Sam", "I Sm"],
+    "100": ["2 Samuel", "II Samuel", "2Sa", "2Sam", "2 Sm", "II Sam", "II Sm"],
+    "110": ["1 Kings", "I Kings", "1Ki", "1Kgs", "1Kin", "I Ki", "I Kgs", "I Kin"],
+    "120": ["2 Kings", "II Kings", "2Ki", "2Kgs", "2Kin", "II Ki", "II Kgs", "II Kin"],
+    "130": ["1 Chronicles", "I Chronicles", "1Ch", "1Chr", "1 Ch", "1 Chron", "I Ch", "I Chr", "I Chron"],
+    "140": ["2 Chronicles", "II Chronicles", "2Ch", "2Chr", "2 Ch", "2 Chron", "II Ch", "II Chr", "II Chron"],
     "150": ["Ezra", "Ezr", "Ez"],
     "160": ["Nehemiah", "Neh", "Ne"],
-    "190": ["Esther", "Esth", "Es", "Est"],
-    "220": ["Job", "Job", "Jb"],
-    "230": ["Psalm", "Ps", "Pslm", "Psa", "Pss"],
-    "240": ["Proverbs", "Prov", "Prv", "Pr", "Pro"],
-    "250": ["Ecclesiastes", "Eccl", "Ecc", "Qoh"],
-    "260": ["Song of Solomon", "Song", "Sg", "SOS", "Cant"],
-    "290": ["Isaiah", "Isa", "Is"],
-    "300": ["Jeremiah", "Jer", "Je", "Jr"],
-    "310": ["Lamentations", "Lam", "La"],
-    "330": ["Ezekiel", "Ezek", "Eze", "Ezk"],
-    "340": ["Daniel", "Dan", "Da", "Dn"],
-    "350": ["Hosea", "Hos", "Ho"],
-    "360": ["Joel", "Joel", "Jl"],
-    "370": ["Amos", "Am", "Amo"],
-    "380": ["Obadiah", "Oba", "Ob", "Obad"],
-    "390": ["Jonah", "Jona", "Jon"],
-    "400": ["Micah", "Mic", "Mi", "Mc"],
-    "410": ["Nahum", "Nah", "Na"],
-    "420": ["Habakkuk", "Hab", "Hb"],
-    "430": ["Zephaniah", "Zeph", "Zep", "Zp"],
-    "440": ["Haggai", "Hag", "Hg"],
-    "450": ["Zechariah", "Zech", "Zec", "Zch"],
-    "460": ["Malachi", "Mal", "Ml"],
-    "470": ["Matthew", "Mat", "Mt", "Matt"],
-    "480": ["Mark", "Mar", "Mk", "Mrk"],
-    "490": ["Luke", "Luk", "Lk"],
-    "500": ["John", "John", "Jn", "Jhn"],
-    "510": ["Acts", "Acts", "Ac", "Act"],
-    "520": ["Romans", "Rom", "Ro", "Rm"],
-    "530": ["1 Corinthians", "1Cor", "1 Co", "1Cor", "I Cor", "I Co", "I Cor"],
-    "540": ["2 Corinthians", "2Cor", "2 Co", "2Cor", "II Cor", "II Co", "II Cor"],
-    "550": ["Galatians", "Gal", "Ga"],
-    "560": ["Ephesians", "Eph", "Eph"],
-    "570": ["Philippians", "Phil", "Php", "Phlp"],
-    "580": ["Colossians", "Col", "Co"],
-    "590": ["1 Thessalonians", "1Ths", "1 Th", "I Thes", "I Th", "I Thess"],
-    "600": ["2 Thessalonians", "2Ths", "2 Th", "II Thes", "II Th", "II Thess"],
-    "610": ["1 Timothy", "1Tim", "1 Ti", "I Tim", "I Ti"],
-    "620": ["2 Timothy", "2Tim", "2 Ti", "II Tim", "II Ti"],
-    "630": ["Titus", "Tit", "Tt"],
-    "640": ["Philemon", "Phlm", "Phm"],
-    "650": ["Hebrews", "Heb", "He"],
-    "660": ["James", "Jam", "Jas", "Ja"],
-    "670": ["1 Peter", "1Pet", "1 Pe", "1 Pt", "I Pet", "I Pe", "I Pt"],
-    "680": ["2 Peter", "2Pet", "2 Pe", "2 Pt", "II Pet", "II Pe", "II Pt"],
-    "690": ["1 John", "1Jn", "1 Jn", "I Jn"],
-    "700": ["2 John", "2Jn", "2 Jn", "II Jn"],
-    "710": ["3 John", "3Jn", "3 Jn", "III Jn"],
-    "720": ["Jude", "Jud", "Jd"],
-    "730": ["Revelation", "Rev", "Re", "Revel", "Apoc"],
-    "323": ["Song of the Three Young Men", "Sg3", "S3Y"],
-    "165": ["1 Esdras", "1Esd", "I Esd"],
-    "170": ["Tobit", "Tob", "Tob"],
+    "165": ["1 Esdras", "I Esdras", "1Es", "1Esd", "I Es", "I Esd"],
+    "166": ["2 Esdras", "II Esdras", "2Es", "2Esd", "II Es", "II Esd"],
+    "170": ["Tobit", "Tob"],
     "180": ["Judith", "Jdt", "Jdth"],
-    "192": ["Greek Esther", "EstGr", "GrEsth"],
-    "232": ["Psalm 151", "Ps151"],
-    "270": ["Wisdom", "Wis", "Wisd"],
-    "280": ["Sirach", "Sir", "Ecclus"],
-    "305": ["Prayer of Azariah", "PrAz", "Azar"],
-    "315": ["Letter of Jeremiah", "EpJer", "LetJer"],
-    "320": ["Baruch", "Bar", "Br"],
-    "325": ["Susanna", "Sus", "Sus"],
+    "190": ["Esther", "Est", "Esth", "Es"],
+    "192": ["Greek Esther", "Additions to Esther", "Esg", "AddEsth", "EstGr", "GrEsth"],
+    "220": ["Job", "Jb"],
+    "230": ["Psalms", "Psalm", "Psa", "Ps", "Pslm"],
+    "232": ["Psalm 151", "Ps2", "Ps151"],
+    "235": ["Psalms of Solomon", "PSS"],
+    "240": ["Proverbs", "Pro", "Prov", "Prv", "Pr"],
+    "245": ["Odae", "Odas", "Oda"],
+    "250": ["Ecclesiastes", "Qoholeth", "Ecc", "Eccl", "Qoh", "Eccles"],
+    "260": ["Song of Songs", "Song of Solomon", "Canticles of Canticles", "Sng", "Song", "Sg", "SOS", "Cant", "COC"],
+    "270": ["Wisdom of Solomon", "Wis", "Wisd"],
+    "280": ["Sirach", "Ecclesiasticus", "Sir", "Ecclus"],
+    "290": ["Isaiah", "Isa", "Is"],
+    "300": ["Jeremiah", "Jer", "Je", "Jr", "Jrm"],
+    "305": ["Prayer of Azariah", "Azariah", "Aza", "PrAzar", "PrAz", "Azar"],
+    "310": ["Lamentations", "Lam", "La", "Lament"],
+    "315": ["Letter of Jeremiah", "Epistle of Jeremiah", "Lje", "EpJer", "LetJer", "LJ"],
+    "320": ["Baruch", "1 Baruch", "I Baruch", "Bar", "Br"],
+    "321": ["2 Baruch", "2Ba"],
+    "322": ["3 Baruch", "3Ba"],
+    "323": ["Song of the 3 Young Men", "Song of the Three Young Men", "S3Y", "SgThree", "Sg3"],
+    "325": ["Susanna", "Sus"],
+    "330": ["Ezekiel", "Ezk", "Ezek", "Eze"],
+    "340": ["Daniel", "Dan", "Da", "Dn"],
     "345": ["Bel and the Dragon", "Bel"],
-    "462": ["1 Maccabees", "1Mac", "I Mac"],
-    "464": ["2 Maccabees", "2Mac", "II Mac"],
-    "466": ["3 Maccabees", "3Mac", "III Mac"],
-    "467": ["4 Maccabees", "4Mac", "IV Mac"],
-    "468": ["2 Esdras", "2Esd", "II Esd"],
-    "790": ["Prayer of Manasseh", "PrMan"],
-    "780": ["Laodiceans", "Lao"]
+    "350": ["Hosea", "Hos", "Ho"],
+    "360": ["Joel", "Jol", "Jl"],
+    "370": ["Amos", "Amo", "Am"],
+    "380": ["Obadiah", "Oba", "Obad", "Ob"],
+    "390": ["Jonah", "Jon", "Jona"],
+    "400": ["Micah", "Mic", "Mi", "Mc"],
+    "410": ["Nahum", "Nam", "Nah", "Na"],
+    "420": ["Habakkuk", "Hab", "Hb"],
+    "430": ["Zephaniah", "Zep", "Zp"],
+    "440": ["Haggai", "Hag", "Hg"],
+    "450": ["Zechariah", "Zec", "Zech", "Zch"],
+    "460": ["Malachi", "Mal", "Ml"],
+    "462": ["1 Maccabees", "1Ma", "1Macc", "1Mac", "I Mac", "I Macc"],
+    "464": ["2 Maccabees", "2Ma", "2Macc", "2Mac", "II Mac", "II Macc"],
+    "466": ["3 Maccabees", "3Ma", "3Macc", "3Mac", "III Mac", "III Macc"],
+    "467": ["4 Maccabees", "4Ma", "4Macc", "4Mac", "IV Mac", "IV Macc"],
+    "468": ["2 Esdras", "2Es", "2Esd", "II Es", "II Esd"],
+    "470": ["Matthew", "Mat", "Matt", "Mt"],
+    "480": ["Mark", "Mrk", "Mar", "Mk"],
+    "490": ["Luke", "Luk", "Lk", "Lu"],
+    "500": ["John", "Jhn", "Jn"],
+    "510": ["Acts", "Act", "Ac"],
+    "511": ["Didache", "Did"],
+    "520": ["Romans", "Rom", "Ro", "Rm"],
+    "530": ["1 Corinthians", "I Corinthians", "1Co", "1Cor", "I Co", "I Cor"],
+    "540": ["2 Corinthians", "II Corinthians", "2Co", "2Cor", "II Co", "II Cor"],
+    "550": ["Galatians", "Gal", "Ga"],
+    "560": ["Ephesians", "Eph"],
+    "570": ["Philippians", "Php", "Phil", "Phlp"],
+    "580": ["Colossians", "Col"],
+    "590": ["1 Thessalonians", "I Thessalonians", "1Th", "1Thess", "1Ths", "1 Thes", "I Th", "I Thess", "I Ths", "I Thes"],
+    "600": ["2 Thessalonians", "II Thessalonians", "2Th", "2Thess", "2Ths", "2 Thes", "II Th", "II Thess", "II Ths", "II Thes"],
+    "610": ["1 Timothy", "I Timothy", "1Ti", "1Tim", "I Ti", "I Tim"],
+    "620": ["2 Timothy", "II Timothy", "2Ti", "2Tim", "II Ti", "II Tim"],
+    "630": ["Titus", "Tit", "Tt"],
+    "640": ["Philemon", "Phm", "Phlm"],
+    "650": ["Hebrews", "Heb", "He"],
+    "660": ["James", "Jas", "Jam", "Jms", "Ja"],
+    "670": ["1 Peter", "I Peter", "1Pe", "1Pet", "1 Pt", "I Pe", "I Pet", "I Pt"],
+    "680": ["2 Peter", "II Peter", "2Pe", "2Pet", "2 Pt", "II Pe", "II Pet", "II Pt"],
+    "690": ["1 John", "I John", "1Jn", "I Jn"],
+    "700": ["2 John", "II John", "2Jn", "II Jn"],
+    "710": ["3 John", "III John", "3Jn", "III Jn"],
+    "720": ["Jude", "Jud", "Jd"],
+    "730": ["Revelation", "Apocalypse", "Rev", "Re", "Revel", "Apoc"],
+    "780": ["Letter to the Laodiceans", "Laodiceans", "Lao"],
+    "790": ["Prayer of Manasseh", "Man", "PrMan"]
 }
 
 # Format json data so that each key with its values are on the same separate line
@@ -147,7 +153,14 @@ def ensure_book_mapping_exists(json_file):
 def load_mapping(json_file):
     """Load the book mapping from a JSON file."""
     with open(json_file, 'r') as file:
-        return json.load(file)
+        # return json.load(file)
+        mapping = json.load(file)
+
+        normalized_mapping = {}
+        for book_number, names in mapping.items():
+            normalized_mapping[book_number] = [normalize_book_name(name).lower() for name in names]
+
+        return normalized_mapping
 
 # Read config
 def read_config():
@@ -419,6 +432,7 @@ def normalize_book_name(book_name):
 def replace_funny_spaces(string):
     string = re.sub(r'[\u0020\u00A0\u1680\u2000-\u200A\u202F\u205F\u3000\u200B\u200C\u200D\u2060\uFEFF]+', ' ', string)
     string = re.sub(r'[\u2010\u2013\u2014-]', '-', string)
+    string = re.sub(r'[\u2018\u2019\u201B\u2032\u02BC\u275C\uFF07\'`]', "'", string)
     return string
 
 # Parse a reference part to get book, chapter, and verse
@@ -434,6 +448,7 @@ def parse_reference_part(part, mapping, verses_count, abbrs_mapping, prev_book=N
         possible_book_name_normalized = normalize_book_name(possible_book_name)
         try:
             book_number = get_book_number(possible_book_name_normalized, mapping)
+            print(f"Book number in PARSE_REF: {book_number}")
             book_explicit = True
             tokens = tokens[i:]
             break
@@ -536,7 +551,6 @@ def substitute_semicolons(reference):
 
 # Calculate the range
 def parse_range(reference, mapping, verses_count, abbrs_mapping):
-
     reference = substitute_semicolons(reference)
     parts = reference.split(',')
     ranges = []
@@ -1004,7 +1018,7 @@ def main():
 
     # Handle the --reference argument
     if args.reference:
-        reference = replace_funny_spaces(args.reference)
+        reference = replace_funny_spaces(args.reference).lower()
         allverses_file_path = ensure_allverses_file(module_name, module_path)
         abbrs_file_path = ensure_abbrs_file(module_name, module_path)
         verses_count = load_verses_count(allverses_file_path)
