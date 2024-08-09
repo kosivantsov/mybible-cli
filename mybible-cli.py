@@ -152,7 +152,7 @@ def ensure_book_mapping_exists(json_file):
 
 def load_mapping(json_file):
     """Load the book mapping from a JSON file."""
-    with open(json_file, 'r') as file:
+    with open(json_file, 'r', encoding='utf-8') as file:
         # return json.load(file)
         mapping = json.load(file)
 
@@ -165,7 +165,7 @@ def load_mapping(json_file):
 # Read config
 def read_config():
     if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, 'r') as file:
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as file:
             config = json.load(file)
     else:
         config = {'modules_path': ''}
@@ -205,7 +205,7 @@ def update_installed_modules_file(files_info):
 def load_installed_modules_file():
     """Load the installed_modules.json file, if it exists."""
     if os.path.exists(INSTALLED_MODULES_FILE):
-        with open(INSTALLED_MODULES_FILE, 'r') as file:
+        with open(INSTALLED_MODULES_FILE, 'r', encoding='utf-8') as file:
             return json.load(file)
     return None
 
@@ -340,6 +340,24 @@ def get_abbrs_file_path(module_name):
         os.makedirs(abbr_dir)
     return os.path.join(abbr_dir, f"{module_name}.abbr.json")
 
+def guess_encoding_and_decode(byte_data):
+    encodings = [
+    'utf-8', 'cp1251', 'latin1', 'cp1252', 'iso-8859-1', 'iso-8859-2', 'iso-8859-5', 
+    'iso-8859-15', 'ascii', 'macroman', 'cp850', 'cp437', 'utf-16', 'utf-16le', 
+    'utf-16be', 'utf-32', 'utf-32le', 'utf-32be', 'big5', 'gb2312', 'gbk', 'gb18030', 
+    'shift_jis', 'euc-jp', 'euc-kr', 'iso-2022-jp', 'iso-2022-kr', 'iso-2022-cn', 
+    'koi8-r', 'koi8-u', 'cp1250', 'cp1253', 'cp1254', 'cp1255', 'cp1256', 'cp1257', 
+    'cp1258', 'cp852', 'cp866', 'cp874', 'iso-8859-3', 'iso-8859-4', 'iso-8859-6', 
+    'iso-8859-7', 'iso-8859-8', 'iso-8859-9', 'windows-1251', 'windows-1250', 
+    'windows-1253', 'windows-1254'
+]
+    for encoding in encodings:
+        try:
+            return byte_data.decode(encoding), encoding
+        except UnicodeDecodeError:
+            continue
+    return byte_data.decode('utf-8', errors='replace'), 'utf-8'  # Fallback to UTF-8 with error replacement
+
 def extract_abbrs_to_json(module_path, output_path):
     """Extract verses from the module and write them to the specified JSON file."""
     abbrs = {}
@@ -350,8 +368,8 @@ def extract_abbrs_to_json(module_path, output_path):
         rows = cur.fetchall()
         for book_number, short_name, long_name in rows:
             book_str = str(book_number)
-            short_str = str(short_name)
-            long_str = str(long_name)
+            short_str, short_encoding = guess_encoding_and_decode(short_name)
+            long_str, long_encoding = guess_encoding_and_decode(long_name)
             abbrs[book_str] = [long_str, short_str]
     finally:
         conn.close()
@@ -404,7 +422,7 @@ def ensure_allverses_file(module_name, module_path):
     return allverses_file_path
 
 def load_verses_count(filename):
-    with open(filename, 'r') as file:
+    with open(filename, 'r', encoding='utf-8') as file:
         return json.load(file)
 
 # Helper function to get book number
@@ -448,7 +466,6 @@ def parse_reference_part(part, mapping, verses_count, abbrs_mapping, prev_book=N
         possible_book_name_normalized = normalize_book_name(possible_book_name)
         try:
             book_number = get_book_number(possible_book_name_normalized, mapping)
-            print(f"Book number in PARSE_REF: {book_number}")
             book_explicit = True
             tokens = tokens[i:]
             break
@@ -757,7 +774,7 @@ def format_output(format_string, data, abbrs_file_path, module_name):
     return result
 
 def get_book_name(abbrs_file_path, book_number):
-    with open(abbrs_file_path, 'r') as file:
+    with open(abbrs_file_path, 'r', encoding='utf-8') as file:
         data = json.load(file)
     values = data.get(str(book_number))
     if values is not None:
