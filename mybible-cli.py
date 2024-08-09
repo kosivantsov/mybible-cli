@@ -340,23 +340,28 @@ def get_abbrs_file_path(module_name):
         os.makedirs(abbr_dir)
     return os.path.join(abbr_dir, f"{module_name}.abbr.json")
 
-def guess_encoding_and_decode(byte_data):
+def guess_encoding_and_decode(data):
+    # If the data is already a string, just return it
+    if isinstance(data, str):
+        return data, 'original'
+
     encodings = [
-    'utf-8', 'cp1251', 'latin1', 'cp1252', 'iso-8859-1', 'iso-8859-2', 'iso-8859-5', 
-    'iso-8859-15', 'ascii', 'macroman', 'cp850', 'cp437', 'utf-16', 'utf-16le', 
-    'utf-16be', 'utf-32', 'utf-32le', 'utf-32be', 'big5', 'gb2312', 'gbk', 'gb18030', 
-    'shift_jis', 'euc-jp', 'euc-kr', 'iso-2022-jp', 'iso-2022-kr', 'iso-2022-cn', 
-    'koi8-r', 'koi8-u', 'cp1250', 'cp1253', 'cp1254', 'cp1255', 'cp1256', 'cp1257', 
-    'cp1258', 'cp852', 'cp866', 'cp874', 'iso-8859-3', 'iso-8859-4', 'iso-8859-6', 
-    'iso-8859-7', 'iso-8859-8', 'iso-8859-9', 'windows-1251', 'windows-1250', 
-    'windows-1253', 'windows-1254'
-]
+        'utf-8', 'cp1251', 'latin1', 'cp1252', 'iso-8859-1', 'iso-8859-2', 'iso-8859-5',
+        'iso-8859-15', 'ascii', 'macroman', 'cp850', 'cp437', 'utf-16', 'utf-16le',
+        'utf-16be', 'utf-32', 'utf-32le', 'utf-32be', 'big5', 'gb2312', 'gbk', 'gb18030',
+        'shift_jis', 'euc-jp', 'euc-kr', 'iso-2022-jp', 'iso-2022-kr', 'iso-2022-cn',
+        'koi8-r', 'koi8-u', 'cp1250', 'cp1253', 'cp1254', 'cp1255', 'cp1256', 'cp1257',
+        'cp1258', 'cp852', 'cp866', 'cp874', 'iso-8859-3', 'iso-8859-4', 'iso-8859-6',
+        'iso-8859-7', 'iso-8859-8', 'iso-8859-9', 'windows-1251', 'windows-1250',
+        'windows-1253', 'windows-1254'
+    ]
+
     for encoding in encodings:
         try:
-            return byte_data.decode(encoding), encoding
-        except UnicodeDecodeError:
+            return data.decode(encoding), encoding
+        except (UnicodeDecodeError, AttributeError):
             continue
-    return byte_data.decode('utf-8', errors='replace'), 'utf-8'  # Fallback to UTF-8 with error replacement
+    return data.decode('utf-8', errors='replace'), 'utf-8'  # Fallback to UTF-8 with error replacement
 
 def extract_abbrs_to_json(module_path, output_path):
     """Extract verses from the module and write them to the specified JSON file."""
