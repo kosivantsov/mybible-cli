@@ -22,16 +22,70 @@ For the program to be useful, you must have at least one MyBible module.
 
 # Usage
 
-When run for the first time (unless `-h`, `--help`, or `--helpformat` arguments were used), it will ask to specify a path to the folder with MyBible modules.
+## First run
 
-The most common usage would be calling the script with a module name and a reference to get the required text: `mybible-cli -m "KJV+" -r "Jn 11:35"`. If a parameter passed to the script contains a space or a character that can have a special meaning for the shell, it needs to be quoted.
+When run for the first time (unless `-h`, `--help`, or `--helpformat` arguments were used), it will ask to specify a path to the folder with MyBible modules. The modules folder can be changed at any time using the `-p`, `--path` argument.
 
-The script can list all the installed modules (`-L`). The list will be sorted by language and will include Bible modules only. When first invoked, it would take a few moments to query each file and get the required info. That info is then hashed and reused until modules are changed.
+## Help messages
 
-The script outputs each verse on a separate line and format it using a format string with %-prefixed placeholders.
+Running the script without any arguments will produce a short help message. Run with `-h`, `--help`, `--helpfomat` to get more details.
+<details>
+  <summary>Long help message</summary>
+<code bash>Options:
+  -h, --help
+        Shows help message and exits
+  -p PATH, --path PATH
+        Specify the path to the folder with MyBible modules
+  -L, --list-modules
+        List available MyBilbe modules
+  -m MODULE_NAME, --module-name MODULE_NAME
+        Name of the MyBible module to use
+  -r REFERENCE, --reference REFERENCE
+        Bible reference to output
+  -a ABBR, --abbr ABBR
+        Get Bible book names and abbreviations from a non-default file.
+        With '--abbr uk' a file named 'uk_mapping.json' located in the configuration folder will be used
+  -A, --self-abbr
+        Get Bible book names and abbreviations from the module itself
+  -f FORMAT, --format FORMAT
+        Format output with %-prefixed format sting.
+        Available placeholders: %f, %a, %c, %v, %t, %T, $z, %A, %Z, %m
+  -F SAVE_FORMAT, --save-format SAVE_FORMAT
+        Specified format string will be applied and saved as default.
+  --helpformat
+        Detailed info on the format string
+  --noansi
+        Clears out any ANSI escape sequences in the Bible verses output (if %A or %Z were used in the format string)
+  --open-config-folder
+        Opens the config folder
+  --open-module-folder
+        Opens the folder with MyBible modules
+  --j2t &lt;JSON_FILE&gt;, --json-to-tsv &lt;JSON_FILE&gt;
+        Converts a json file to tsv (to edit a mapping file)
+  --check-tsv &lt;TSV_FILE&gt;
+        Reports duplicates in the specified tsv file
+  --t2j &lt;TSV_FILE&gt;, --tsv-to-json &lt;TSV_FILE&gt;
+        Converts a tsv file to json (to use as a mapping file)</code>
+</details>
+
+
+## Listing available modules
+
+The script can list all the installed modules with `-L`. The list will be sorted by language and will include Bible modules only. When first invoked, it would take a few moments to query each file and get the required info. That info is then hashed and reused until modules are changed.
+
+## Getting text of a Bible reference
+
+The most common usage would be calling the script with a module name and a reference to get the required text:  
+`mybible-cli -m "KJV+" -r "Jn 11:35"`  
+If a parameter passed to the script contains a space or a character that can have a special meaning for the shell, it needs to be quoted.  
+The script understands only the colon Bible notation without letters and parenthesis in the chapter and verse part. Chapter and verse numbers could be omitted to output and entire book or chapter. Blocks should be separated by commas or semicolons. Ranges are marked with a minus. Spaces in ranges are permitted. Periods will be ignored.
+
+## Output format
+
+The script outputs each verse on a separate line and format it using a format string with %-prefixed placeholders.  
 To learn what each placeholder means, run `mybible-cli --helpformat`.
 
-The default format is `%f %c:%v: %t (%m)` (full book name, chapter:verse\: text without most MyBible markup, module name in parenthesis): `John 11:35: Jesus wept. (KJV+)`.
+The default format is <strong>`%f %c:%v: %t (%m)`</strong> (full book name, chapter:verse\: text without most MyBible markup, module name in parenthesis): `John 11:35: Jesus wept. (KJV+)`.
 A format string specified with `-f` is applied only once. With `-F`, the specified format string will be saved as default and used when no format string is given explicitly.
 
 Text of the reference can be output in five different ways:
@@ -42,7 +96,9 @@ Text of the reference can be output in five different ways:
 1. `%Z` – the same as above, but without Strong's numbers
 If you need Strong's numbers in the output, but don't want to get the escape sequences (for instance, when you pipe output of the script), there is an option `--noansi`. It has no effect on the output when the text is not formatted with `%A` or `%Z`.
 
-Bible book names and abbreviations are looked up in a list provided within the script. During the first run, the list is saved in the configuration directory and could be used to create custom lookup lists.
+## Bible book names and abbreviations
+
+Bible book names and abbreviations are looked up in a list provided within the script. During the first run, the list is saved as `mapping.json` in the configuration directory and could be used to create custom lookup lists.
 
 If you want to use book names and abbreviations from the module itself, run the script with the `-A` argument. To use a non-default lookup list, use `-a prefix`. In that case, the script will try to use `prefix_mapping.json` in the config folder.
 `prefix` can be an arbitrary string but a file name with that prefix should exist, otherwise the default lookup file is used.
@@ -54,63 +110,10 @@ The script has three arguments to help with creating custom files to look up Bib
 
 `json-to-tsv` and `tsv-to-json` output the converted file in the same location as the input file, with the same file name but different extension. No check for file extensions or data is performed during conversion, so it's possible to convert wrong data to wrong formats.
 
+## Accessing config and MyBible modules folders
+
 The script allows opening its config folder and the folder with the MyBible modules in the default file manager. There are two arguments for that:
 * `--open-config-folder`
 * `--open-module-folder`
 
 
-The script understands only the colon Bible notation without letters and parenthesis in the chapter and verse part. Blocks of verses should be separated by commas or semicolons. Spaces in ranges are permitted. Periods will be ignored.
-
-
-``` bash
-Options:
-  -h, --help
-        Shows help message and exits
-
-  -p PATH, --path PATH
-        Specify the path to the folder with MyBible modules
-
-  -L, --list-modules
-        List available MyBilbe modules
-
-  -m MODULE_NAME, --module-name MODULE_NAME
-        Name of the MyBible module to use
-
-  -r REFERENCE, --reference REFERENCE
-        Bible reference to output
-
-  -a ABBR, --abbr ABBR
-        Get Bible book names and abbreviations from a non-default file.
-        With '--abbr uk' a file named 'uk_mapping.json' located in the configuration folder will be used
-
-  -A, --self-abbr
-        Get Bible book names and abbreviations from the module itself
-
-  -f FORMAT, --format FORMAT
-        Format output with %-prefixed format sting.
-        Available placeholders: %f, %a, %c, %v, %t, %T, $z, %A, %Z, %m
-
-  -F SAVE_FORMAT, --save-format SAVE_FORMAT
-        Specified format string will be applied and saved as default.
-
-  --helpformat
-        Detailed info on the format string
-
-  --noansi
-        Clears out any ANSI escape sequences in the Bible verses output (if %A or %Z were used in the format string)
-
-  --open-config-folder
-        Opens the config folder
-
-  --open-module-folder
-        Opens the folder with MyBible modules
-
-  --j2t <JSON_FILE>, --json-to-tsv <JSON_FILE>
-        Converts a json file to tsv (to edit a mapping file)
-
-  --check-tsv <TSV_FILE>
-        Reports duplicates in the specified tsv file
-
-  --t2j <TSV_FILE>, --tsv-to-json <TSV_FILE>
-        Converts a tsv file to json (to use as a mapping file)
-```
