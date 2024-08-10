@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 import argparse
+import csv
+import hashlib
 import json
 import os
-import sqlite3
-import hashlib
 import re
-import unicodedata
+import sqlite3
+import subprocess
 import textwrap
+import unicodedata
+
 
 # Repeated strings
 INVALID_PATH = "\nDirectory does not exist:"
@@ -879,6 +882,104 @@ def ansi_format_no_strong(string):
 
     return string
 
+def open_folder(folder_path):
+    try:
+        if os.name == 'nt':  # Windows
+            os.startfile(folder_path)
+        elif 'darwin' in os.sys.platform:  # macOS
+            subprocess.run(['open', folder_path], check=True)
+        else:  # Linux and other Unix-like OS
+            subprocess.run(['xdg-open', folder_path], check=True)
+    except Exception as e:
+        print("Error", f"Failed to open the folder: {str(e)}")
+
+def json_to_tsv(json_file):
+    if os.path.exists(json_file):
+        with open(json_file, 'r', encoding='utf-8') as file:
+            json_data = json.load(file)
+            # print(json_data)
+    else:
+        print(f"Failed to open {json_file}")
+        return
+    tsv_lines = []
+    for key, values in json_data.items():
+        tsv_line = f"{key}\t" + "\t".join(values)
+        tsv_lines.append(tsv_line)
+    tsv_string = "\n".join(tsv_lines)
+    directory = os.path.dirname(os.path.abspath(json_file))
+    filename = os.path.splitext(os.path.basename(json_file))[0]
+    tsv_file = os.path.join(directory, f"{filename}.tsv")
+    with open(tsv_file, 'w', encoding='utf-8') as file:
+        file.write(tsv_string)
+
+    return tsv_file
+
+def show_tsv_duplicates(tsv_file):
+    line_maps = []
+    global_duplicates = {}  # Use a regular dictionary
+
+    if os.path.exists(tsv_file):
+        # Read the TSV file and collect the cells in each line as a map
+        with open(tsv_file, newline='', encoding='utf-8') as file:
+            reader = csv.reader(file, delimiter='\t')
+
+            for line_number, row in enumerate(reader, start=1):
+                line_map = {i: element for i, element in enumerate(row, start=1)}
+                line_maps.append((line_number, line_map))
+
+                # Check for duplicates within the same line
+                line_duplicates = [value for value in line_map.values() if list(line_map.values()).count(value) > 1]
+                if line_duplicates:
+                    print(f"Repeated values on row {line_number}: {', '.join(set(line_duplicates))}")
+
+                # Add elements to the global duplicates map
+                for element in line_map.values():
+                    if element in global_duplicates:
+                        global_duplicates[element].append(line_number)
+                    else:
+                        global_duplicates[element] = [line_number]
+
+        # Check for duplicates across different lines
+        for element, lines in global_duplicates.items():
+            if len(lines) > 1:
+                print(f"'{element}' is repeated on rows {', '.join(map(str, lines))}")
+
+def tsv_to_json(tsv_file):
+    if os.path.exists(tsv_file):
+        tsv_lines = []
+        with open(tsv_file, 'r', newline='', encoding='utf-8') as file:
+            reader = csv.reader(file, delimiter='\t')
+
+            for row in reader:
+                tsv_cells = [cell for cell in row if cell.strip()]
+                tsv_lines.append(tsv_cells)
+
+        json_data = {}
+        for line in tsv_lines:
+            if line:
+                key = line[0]
+                values = line[1:]
+                json_data[key] = values
+        json_data = custom_json_dump(json_data)
+        directory = os.path.dirname(os.path.abspath(tsv_file))
+        filename = os.path.splitext(os.path.basename(tsv_file))[0]
+        json_file = os.path.join(directory, f"{filename}.json")
+        def ask_to_overwrite():
+            while True:
+                response = input("The json file already exists. Do you want to overwrite it? (yes/no): ").strip().lower()
+                if response in ["yes", "y"]:
+                    return True
+                elif response in ["no", "n"]:
+                    return False
+                else:
+                    print("Please enter 'yes' or 'no'.")
+
+        if os.path.exists(json_file):
+            if not ask_to_overwrite():
+                return
+        with open(json_file, 'w', encoding='utf-8') as file:
+            file.write(json_data)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Command line tool to query MyBible modules.",
@@ -932,6 +1033,28 @@ def main():
         action='store_true',
         help="clears out any ANSI escape sequences in the Bible verses output (if %%A or %%Z were used)"
     )
+    parser.add_argument(
+        "--open-config-folder",
+        action='store_true',
+        help="opens the config folder"
+    )
+    parser.add_argument(
+        "--open-module-folder",
+        action='store_true',
+        help="opens the folder with MyBible modules"
+    )
+    parser.add_argument(
+        "--j2t", "--json-to-tsv",
+        help="converts a json file to tsv (to edit a mapping file)"
+    )
+    parser.add_argument(
+        "--check-tsv",
+        help="reports duplicates in the specified tsv file"
+    )
+    parser.add_argument(
+        "--t2j", "--tsv-to-json",
+        help="converts a tsv file to json (to use as a mapping file)"
+    )
 
     args = parser.parse_args()
 
@@ -968,6 +1091,35 @@ def main():
     # Handle the --list-modules argument
     if args.list_modules:
         list_sqlite_files(modules_path)
+        return
+
+    # Handle the --open-config-folder argument
+    if args.open_config_folder:
+        open_folder(get_default_config_path())
+        return
+
+    # Handle the --open-module-folder argument
+    if args.open_module_folder:
+        open_folder(modules_path)
+        return
+
+    # Handle the --json-to-tsv argument
+    if args.j2t:
+        json_file = args.j2t
+        tsv_file = json_to_tsv(json_file)
+        print(f"TSV file created: {tsv_file}")
+        return
+
+    # Handle the --check-tsv argument
+    if args.check_tsv:
+        tsv_file = args.check_tsv
+        show_tsv_duplicates(tsv_file)
+        return
+
+    # Handle the --t2j argument
+    if args.t2j:
+        tsv_file = args.t2j
+        tsv_to_json(tsv_file)
         return
 
     # Handle the --format argument
