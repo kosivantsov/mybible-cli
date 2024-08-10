@@ -909,6 +909,9 @@ def json_to_tsv(json_file):
     directory = os.path.dirname(os.path.abspath(json_file))
     filename = os.path.splitext(os.path.basename(json_file))[0]
     tsv_file = os.path.join(directory, f"{filename}.tsv")
+    if os.path.exists(tsv_file):
+        if not ask_to_overwrite(tsv_file):
+            return
     with open(tsv_file, 'w', encoding='utf-8') as file:
         file.write(tsv_string)
 
@@ -964,21 +967,22 @@ def tsv_to_json(tsv_file):
         directory = os.path.dirname(os.path.abspath(tsv_file))
         filename = os.path.splitext(os.path.basename(tsv_file))[0]
         json_file = os.path.join(directory, f"{filename}.json")
-        def ask_to_overwrite():
-            while True:
-                response = input("The json file already exists. Do you want to overwrite it? (yes/no): ").strip().lower()
-                if response in ["yes", "y"]:
-                    return True
-                elif response in ["no", "n"]:
-                    return False
-                else:
-                    print("Please enter 'yes' or 'no'.")
 
         if os.path.exists(json_file):
-            if not ask_to_overwrite():
+            if not ask_to_overwrite(json_file):
                 return
         with open(json_file, 'w', encoding='utf-8') as file:
             file.write(json_data)
+
+def ask_to_overwrite(file):
+    while True:
+        response = input(f"The file \'{file}\' already exists. Do you want to overwrite it? (yes/no): ").strip().lower()
+        if response in ["yes", "y"]:
+            return True
+        elif response in ["no", "n"]:
+            return False
+        else:
+            print("Please enter 'yes' or 'no'.")
 
 def main():
     parser = argparse.ArgumentParser(

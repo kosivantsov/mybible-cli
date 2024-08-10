@@ -47,6 +47,18 @@ Bible book names and abbreviations are looked up in a list provided within the s
 If you want to use book names and abbreviations from the module itself, run the script with the `-A` argument. To use a non-default lookup list, use `-a prefix`. In that case, the script will try to use `prefix_mapping.json` in the config folder.
 `prefix` can be an arbitrary string but a file name with that prefix should exist, otherwise the default lookup file is used.
 
+The script has three arguments to help with creating custom files to look up Bible names:
+* `-j2t`, `--json-to-tsv`: converts json to tsv which can be open and edited in a spreadsheet application
+* `-t2j`, `--tsv-to-json`: converts tsv with edited data to json to be used with `-l` argument
+* `--check-tsv`: finds and reports duplicates in a tsv file
+
+`json-to-tsv` and `tsv-to-json` output the converted file in the same location as the input file, with the same file name but different extension. No check for file extensions or data is performed during conversion, so it's possible to convert wrong data to wrong formats.
+
+The script allows opening its config folder and the folder with the MyBible modules in the default file manager. There are two arguments for that:
+* `--open-config-folder`
+* `--open-module-folder`
+
+
 The script understands only the colon Bible notation without letters and parenthesis in the chapter and verse part. Blocks of verses should be separated by commas or semicolons. Spaces in ranges are permitted. Periods will be ignored.
 
 
@@ -86,4 +98,19 @@ Options:
 
   --noansi
         Clears out any ANSI escape sequences in the Bible verses output (if %A or %Z were used in the format string)
+
+  --open-config-folder
+        Opens the config folder
+
+--open-module-folder
+        Opens the folder with MyBible modules
+
+--j2t <JSON_FILE>, --json-to-tsv <JSON_FILE>
+        Converts a json file to tsv (to edit a mapping file)
+
+--check-tsv <TSV_FILE>
+        Reports duplicates in the specified tsv file
+
+--t2j <TSV_FILE>, --tsv-to-json <TSV_FILE>
+        Converts a tsv file to json (to use as a mapping file)
 ```
