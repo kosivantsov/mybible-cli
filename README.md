@@ -82,7 +82,7 @@ The script understands only the colon Bible notation without letters and parenth
 
 ## Output format
 
-The script outputs each verse on a separate line and format it using a format string with %-prefixed placeholders.  
+The script outputs each verse on a separate line and formats it using a format string with %-prefixed placeholders.  
 To learn what each placeholder means, run `mybible-cli --helpformat`.
 
 The default format is <strong>`%f %c:%v: %t (%m)`</strong> (full book name, chapter:verse\: text without most MyBible markup, module name in parenthesis): `John 11:35: Jesus wept. (KJV+)`.
