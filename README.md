@@ -93,8 +93,8 @@ Text of the reference can be output in five different ways:
 1. `%t` - plain text, no Strong's numbers, no other markup, but with line breaks and indentations as marked in the module; with notes
 1. `%z` – the same as above, but without line breaks and indentations marked in the module; notes removed
 1. `%A` – MyBible markup is converted to ANSI escape sequences for pretty output in the terminal. Includes Strong's numbers
-1. `%Z` – the same as above, but without Strong's numbers
-If you need Strong's numbers in the output, but don't want to get the escape sequences (for instance, when you pipe output of the script), there is an option `--noansi`. It has no effect on the output when the text is not formatted with `%A` or `%Z`.
+1. `%Z` – the same as above, but without Strong's numbers  
+   If you need Strong's numbers in the output, but don't want to get the escape sequences (for instance, when you pipe output of the script), there is an option `--noansi`. It has no effect on the output when the text is not formatted with `%A` or `%Z`.
 
 ## Bible book names and abbreviations
 
