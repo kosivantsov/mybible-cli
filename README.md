@@ -116,4 +116,7 @@ The script allows opening its config folder and the folder with the MyBible modu
 * `--open-config-folder`
 * `--open-module-folder`
 
+## Localized version of the script
+
+This script's UI strings can be localized. The script will read its localization from a file `l10n/<lang>.properties` located in the configuration folder, where `<lang>` is a language code. If there is a .properties file with the same filename as the system's locale language code that file will be used. Any strings missing from the file will be output as they are hardcoded in the script. At the moment, only `en.properties` and `uk.properties` are available. Localization files have to be copied manually. 
 
