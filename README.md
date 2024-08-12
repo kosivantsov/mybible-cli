@@ -78,7 +78,7 @@ The script can list all the installed modules with `-L`. The list will be sorted
 The most common usage would be calling the script with a module name and a reference to get the required text:  
 `mybible-cli -m "KJV+" -r "Jn 11:35"`  
 If a parameter passed to the script contains a space or a character that can have a special meaning for the shell, it needs to be quoted.  
-The script understands only the colon Bible notation without letters and parenthesis in the chapter and verse part. Chapter and verse numbers could be omitted to output and entire book or chapter. Blocks should be separated by commas or semicolons. Ranges are marked with a minus. Spaces in ranges are permitted. Periods will be ignored.
+The script understands only the colon Bible notation without letters and parenthesis in the chapter and verse part. Chapter and verse numbers could be omitted to output an entire book or chapter. Blocks should be separated by commas or semicolons. Ranges are marked with a minus. Spaces in ranges are permitted. Periods will be ignored.
 
 ## Output format
 
