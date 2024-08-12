@@ -3,18 +3,13 @@ import argparse
 import csv
 import hashlib
 import json
+import locale
 import os
 import re
 import sqlite3
 import subprocess
 import textwrap
 import unicodedata
-
-
-# Repeated strings
-INVALID_PATH = "\nDirectory does not exist:"
-EMPTY_PATH = "\nNo MyBible modules found in"
-INPUT_PATH = "\nFull path to the folder with MyBible modules:\n"
 
 # Config location (APP_NAME) is a folder name under ~/.config
 APP_NAME = 'mybible-cli'
@@ -28,9 +23,147 @@ def get_default_config_path():
         else:
             return os.path.join(os.path.expanduser('~'), '.config', APP_NAME)
 
+# Get system locale to get the language, set language to 'en' if not set
+language_country = locale.getlocale()[0]
+if not language_country:
+    language_country = "en_US"
+language, country = [part.lower() for part in re.split(r'[_\-]', language_country)]
+
+# Parse the *.properties file
+def read_properties(properties_file):
+    properties = {}
+    if not os.path.exists(properties_file):
+        return properties
+
+    def normalize_value(value):
+        value = value.strip().replace('\\\\', '<doubleslash>')
+        value = value.replace(r'\n', '\n')
+        value = value.replace(r'\t', '\t')
+        value = value.replace('<doubleslash>', '\\')
+        value = value.strip()
+        return value
+
+    with open(properties_file, 'r', encoding='utf-8') as file:
+        key = None
+        value = ""
+        for line in file:
+            line = line.rstrip()
+
+            # Skip comments and blank lines
+            if not line or line.startswith('#') or line.startswith('!'):
+                continue
+
+            # Handle line continuation with a backslash
+            if line.endswith('\\'):
+                line = line[:-1].rstrip()
+                # First part of a multi-line value
+            if '=' in line:
+                key, value = line.split('=')
+                key = key.strip()
+                value = value.strip()
+            else:
+                # Continuing a multi-line value
+                value += ' ' + line.strip()
+            properties[key] = normalize_value(value)
+
+    return properties
+
 CONFIG_FILE = os.path.join(get_default_config_path(), 'config.json')
 BOOKMAPPING_FILE = os.path.join(get_default_config_path(), 'mapping.json')
 INSTALLED_MODULES_FILE = os.path.join(get_default_config_path(), 'installed_modules.json')
+L10N_FILE = os.path.join(get_default_config_path(), 'l10n', f'{language}.properties',)
+
+# Default UI strings if l10n data not found
+default_l10n_strings = {
+    'invalid_path': '\nCannot find the folder with MyBible modules: {modules_path}',
+    'empty_path': '\nNo MyBible modules found found in {modules_path}',
+    'in_path': '\nFull path to the folder with MyBible modules:\n',
+    'no_module': '\nNo module named \'{module_name}\' found in \'{modules_path}\'',
+    'exit_now': '\nExiting now...',
+    'available_modules': '\nAvailable MyBible modules: {number}',
+    'invalid_reference': '\nInvalid reference for this module',
+    'no_verse_ouput': '\nCannon output {bold}{reference}{normal}:',
+    'error': 'Error!',
+    'folder_fail': 'Failed to open the folder: {error}',
+    'file_fail': 'Failed to open {file}',
+    'file_created': 'File created: {file}',
+    'help_description': 'Command line tool to query MyBible modules.',
+    'help_epilog': 'Parameter containing several tokens should be quoted: {bold}mybible-cli -b \"NIV\'11\" -r \"1 Pet 1:1\"{normal}',
+    'help_path': 'path to the folder with MyBible module',
+    'help_list': 'lists available MyBilbe modules',
+    'help_modulename': 'name of the MyBible module to use',
+    'help_reference': 'Bible reference to output',
+    'help_abbr': 'reads Bible book names and abbreviations from a non-default file. With {bold}{italics}--abbr uk{normal} a file named {bold}{italics}uk_mapping.json{normal} located in the configuration folder will be used',
+    'help_selfabbr': 'reads Bible book names and abbreviations from the module itself',
+    'help_format': 'formats output with %%-prefixed format string. Available placeholders: f, a, c, v, t, T, z, A, Z, m',
+    'help_saveformat': 'specified format string will be applied and saved as default',
+    'help_helpformat': 'detailed info on the format string',
+    'help_noansi': 'clears out any ANSI escape sequences in the Bible verses output (if %%A or %%Z were used)',
+    'help_open_config': 'opens the config folder',
+    'help_open_module': 'opens the folder with MyBible modules',
+    'help_j2t': 'converts a json file to tsv (to edit a mapping file)',
+    'help_checktsv': 'reports duplicates in the specified tsv file',
+    'help_t2j': 'converts a tsv file to json (to use as a mapping file)',
+    'help_helpformat_message': '''\nAvailable placeholders for the format string:\n\
+    \t  %f \t full book name\n\
+    \t  %a \t abbreviated book name\n\
+    \t  %b \t book number as per MyBible format specifications\n\
+    \t  %c \t chapter number\n\
+    \t  %v \t verse number\n\
+    \t  %T \t raw text of the verse from the module\n\
+    \t  %t \t text of the verse without markers; notes and line breaks are kept\n\
+    \t  %z \t the same as above, but without notes and line breaks\n\
+    \t  %A \t text of the verse with color output for console; Strong\' numbers are included\n\
+    \t  %Z \t the same as above, but without Strong\'s numbers\n\
+    \t  %m \t module name\n\
+Current default format is {bold}{format_string}{normal}\n\
+To save a new default, provide the format with {bold}-F{normal}\n\
+Format string may contain {bold}\\t{normal} and {bold}\\n{normal}\n\
+Each verse in the output is printed on a new line and is formatted individually''',
+        'parser_error': 'Run with the arguments -b/--module_name and -r/--reference, or use one of the following: -L/--list-modules, --helpformat, --open-config-folder, --open-module-folder, --j2t/--json-to-tsv, --check-tsv, --t2j/--tsv-to-json',
+    'file_exists_prompt': 'The file \'{file}\' already exists. Do you want to overwrite it? (yes/no): ',
+    'yes_no_prompt': 'Please enter \'yes\' or \'no\'',
+    'repeated_in_line': 'Repetitions in row {row}: {repeated_string}',
+    'repeated_in_file': 'Repetitions of {element} in rows {rows}'
+}
+
+# Load l10n data or use defaults
+l10n_strings = read_properties(L10N_FILE)
+invalid_path = l10n_strings.get('invalid_path', default_l10n_strings['invalid_path'])
+empty_path = l10n_strings.get('empty_path', default_l10n_strings['empty_path'])
+in_path = l10n_strings.get('in_path', default_l10n_strings['in_path'])
+no_module = l10n_strings.get('no_module', default_l10n_strings['no_module'])
+exit_now = l10n_strings.get('exit_now', default_l10n_strings['exit_now'])
+invalid_reference = l10n_strings.get('invalid_reference', default_l10n_strings['invalid_reference'])
+no_verse_ouput = l10n_strings.get('no_verse_ouput', default_l10n_strings['no_verse_ouput'])
+available_modules = l10n_strings.get('available_modules', default_l10n_strings['available_modules'])
+error = l10n_strings.get('error', default_l10n_strings['error'])
+folder_fail = l10n_strings.get('folder_fail', default_l10n_strings['folder_fail'])
+file_fail = l10n_strings.get('file_fail', default_l10n_strings['file_fail'])
+file_created = l10n_strings.get('file_created', default_l10n_strings['file_created'])
+help_description = l10n_strings.get('help_description', default_l10n_strings['help_description'])
+help_epilog = l10n_strings.get('help_epilog', default_l10n_strings['help_epilog'])
+help_path = l10n_strings.get('help_path', default_l10n_strings['help_path'])
+help_list = l10n_strings.get('help_list', default_l10n_strings['help_list'])
+help_modulename = l10n_strings.get('help_modulename', default_l10n_strings['help_modulename'])
+help_reference = l10n_strings.get('help_reference', default_l10n_strings['help_reference'])
+help_abbr = l10n_strings.get('help_abbr', default_l10n_strings['help_abbr'])
+help_selfabbr = l10n_strings.get('help_selfabbr', default_l10n_strings['help_selfabbr'])
+help_format = l10n_strings.get('help_format', default_l10n_strings['help_format'])
+help_saveformat = l10n_strings.get('help_saveformat', default_l10n_strings['help_saveformat'])
+help_helpformat = l10n_strings.get('help_helpformat', default_l10n_strings['help_helpformat'])
+help_noansi = l10n_strings.get('help_noansi', default_l10n_strings['help_noansi'])
+help_open_config = l10n_strings.get('help_open_config', default_l10n_strings['help_open_config'])
+help_open_module = l10n_strings.get('help_open_module', default_l10n_strings['help_open_module'])
+help_j2t = l10n_strings.get('help_j2t', default_l10n_strings['help_j2t'])
+help_checktsv = l10n_strings.get('help_checktsv', default_l10n_strings['help_checktsv'])
+help_t2j = l10n_strings.get('help_t2j', default_l10n_strings['help_t2j'])
+help_helpformat_message = l10n_strings.get('help_helpformat_message', default_l10n_strings['help_helpformat_message'])
+parser_error = l10n_strings.get('parser_error', default_l10n_strings['parser_error'])
+file_exists_prompt = l10n_strings.get('file_exists_prompt', default_l10n_strings['file_exists_prompt'])
+yes_no_prompt = l10n_strings.get('yes_no_prompt', default_l10n_strings['yes_no_prompt'])
+repeated_in_line = l10n_strings.get('repeated_in_line', default_l10n_strings['repeated_in_line'])
+repeated_in_file = l10n_strings.get('repeated_in_file', default_l10n_strings['repeated_in_file'])
 
 # Default book mapping content
 DEFAULT_BOOK_MAPPING = \
@@ -234,7 +367,7 @@ def list_sqlite_files(path):
 
     # Output with an extra line break and the number of installed modules
     def output_table(data, headers, files):
-        print(f"\nAvailable MyBible modules ({len(files)}):\n")
+        print(available_modules.format(number = len(files)), "\n")
         print_table(data, headers)
 
     # Create a list of file names for comparison
@@ -245,7 +378,6 @@ def list_sqlite_files(path):
         data = [installed_modules[file] for file in file_names]
         headers = ["Language", "Module", "Description"]
         data = sorted(data, key=lambda x: x[0])
-        # print_table(data, headers)
         output_table(data, headers, files)
     else:
         # Collect new info from each module
@@ -485,10 +617,10 @@ def parse_reference_part(part, mapping, verses_count, abbrs_mapping, prev_book=N
             book_number = prev_book
             book_explicit = False
         else:
-            return "Invalid reference for this module", None, None, None, None, None
+            return invalid_reference, None, None, None, None, None
 
     if str(book_number) not in abbrs_mapping.keys():
-        return "Invalid reference for this module", None, None, None, None, None
+        return invalid_reference, None, None, None, None, None
 
     chapter = None
     verse = None
@@ -591,14 +723,14 @@ def parse_range(reference, mapping, verses_count, abbrs_mapping):
         for i, subrange in enumerate(subranges):
             if i == 0:
                 result = parse_reference_part(subrange, mapping, verses_count, abbrs_mapping, prev_end_book, prev_end_chapter, prev_end_verse, prev_was_verse)
-                if result[0] == "Invalid reference for this module":
-                    return "Invalid reference for this module"
+                if result[0] == invalid_reference:
+                    return invalid_reference
                 start_book, start_chapter, start_verse, end_chapter, end_verse, prev_was_verse = result
             else:
                 if ' ' in subrange or subrange.isalpha():
                     result = parse_reference_part(subrange, mapping, verses_count, abbrs_mapping)
-                    if result[0] == "Invalid reference for this module":
-                        return "Invalid reference for this module"
+                    if result[0] == invalid_reference:
+                        return invalid_reference
                     start_book, start_chapter, start_verse, end_chapter, end_verse, prev_was_verse = result
                 else:
                     start_book = prev_end_book
@@ -874,7 +1006,7 @@ def ansi_format_text(string):
     return string
 
 def ansi_format_no_strong(string):
-    """Remove Strong numbers from console output with ANSI escape sequences"""
+    """Remove Strong's numbers from console output with ANSI escape sequences"""
     string = ansi_format_text(string)
     strong_number = re.compile(r'\x1B\[94m\x1B\[3m<[SGH][^>]*>\x1B\[0m')
 
@@ -891,24 +1023,24 @@ def open_folder(folder_path):
         else:  # Linux and other Unix-like OS
             subprocess.run(['xdg-open', folder_path], check=True)
     except Exception as e:
-        print("Error", f"Failed to open the folder: {str(e)}")
+        print(f"{error}", folder_fail.format(error = str(e)))
 
 def json_to_tsv(json_file):
-    if os.path.exists(json_file):
+    if not os.path.exists(json_file):
+        print(file_fail.format(file=json_file))
+        return
+    else:
+        tsv_lines = []
         with open(json_file, 'r', encoding='utf-8') as file:
             json_data = json.load(file)
-            # print(json_data)
-    else:
-        print(f"Failed to open {json_file}")
-        return
-    tsv_lines = []
-    for key, values in json_data.items():
-        tsv_line = f"{key}\t" + "\t".join(values)
-        tsv_lines.append(tsv_line)
-    tsv_string = "\n".join(tsv_lines)
+            for key, values in json_data.items():
+                tsv_line = f"{key}\t" + "\t".join(values)
+                tsv_lines.append(tsv_line)
+        tsv_string = "\n".join(tsv_lines)
     directory = os.path.dirname(os.path.abspath(json_file))
     filename = os.path.splitext(os.path.basename(json_file))[0]
     tsv_file = os.path.join(directory, f"{filename}.tsv")
+
     if os.path.exists(tsv_file):
         if not ask_to_overwrite(tsv_file):
             return
@@ -933,7 +1065,7 @@ def show_tsv_duplicates(tsv_file):
                 # Check for duplicates within the same line
                 line_duplicates = [value for value in line_map.values() if list(line_map.values()).count(value) > 1]
                 if line_duplicates:
-                    print(f"Repeated values on row {line_number}: {', '.join(set(line_duplicates))}")
+                    print(repeated_in_line.format(row=line_number, repeated_string=f"{', '.join(set(line_duplicates))}"))
 
                 # Add elements to the global duplicates map
                 for element in line_map.values():
@@ -945,14 +1077,17 @@ def show_tsv_duplicates(tsv_file):
         # Check for duplicates across different lines
         for element, lines in global_duplicates.items():
             if len(lines) > 1:
-                print(f"'{element}' is repeated on rows {', '.join(map(str, lines))}")
+                print(repeated_in_file.format(element=element, rows=f"{', '.join(map(str, lines))}"))
+    else:
+        print(file_fail.format(file=tsv_file))
 
 def tsv_to_json(tsv_file):
-    if os.path.exists(tsv_file):
+    if not os.path.exists(tsv_file):
+        print(file_fail.format(file=tsv_file))
+    else:
         tsv_lines = []
         with open(tsv_file, 'r', newline='', encoding='utf-8') as file:
             reader = csv.reader(file, delimiter='\t')
-
             for row in reader:
                 tsv_cells = [cell for cell in row if cell.strip()]
                 tsv_lines.append(tsv_cells)
@@ -974,90 +1109,88 @@ def tsv_to_json(tsv_file):
         with open(json_file, 'w', encoding='utf-8') as file:
             file.write(json_data)
 
+    return tsv_file
+
 def ask_to_overwrite(file):
     while True:
-        response = input(f"The file \'{file}\' already exists. Do you want to overwrite it? (yes/no): ").strip().lower()
+        response = input(file_exists_prompt.format(file=file)).strip().lower()
         if response in ["yes", "y"]:
             return True
         elif response in ["no", "n"]:
             return False
         else:
-            print("Please enter 'yes' or 'no'.")
+            print(yes_no_prompt)
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Command line tool to query MyBible modules.",
-        epilog=f"Parameter containing several tokens should be quoted: {start_bold}mybible-cli -b \"NIV'11\" -r \"1 Pet 1:1\"{reset_to_normal}"
+        description = help_description,
+        epilog=help_epilog.format(bold=start_bold, normal=reset_to_normal)
     )
     parser.add_argument(
         "-p", "--path",
-        help="path to the folder with MyBible modules"
+        help=help_path
     )
     parser.add_argument(
         "-L", "--list-modules",
         action="store_true",
-        help="list available MyBilbe modules"
+        help=help_list
     )
     parser.add_argument(
         "-m", "--module-name",
-        help="name of the MyBible module to use"
+        help=help_modulename
     )
     parser.add_argument(
         "-r", "--reference",
-        help="Bible reference to output"
+        help=help_reference
     )
     parser.add_argument(
         "-a", "--abbr",
-        help=f"read Bible book names and abbreviations from a non-default file. \
-        With {start_bold}{start_italics}--abbr uk{reset_to_normal} \
-        a file named {start_bold}{start_italics}uk_mapping.json{reset_to_normal} \
-        located in the configuration folder will be used"
+        help=help_abbr.format(bold=start_bold, italics=start_italics, normal=reset_to_normal)
     )
     parser.add_argument(
         "-A", "--self-abbr",
         action="store_true",
-        help=f"read Bible book names and abbreviations from the module itself"
+        help=help_selfabbr
     )
     parser.add_argument(
         "-f", "--format",
-        help="format output with %%-prefixed format sting. \
-        Available placeholders: f, a, c, v, t, T, z, A, Z, m"
+        help=help_format
     )
     parser.add_argument(
         "-F", "--save-format",
-        help="specified format string will be applied and saved as default"
+        help=help_saveformat
     )
     parser.add_argument(
         "--helpformat",
         action="store_true",
-        help="detailed info on the format string"
+        help=help_helpformat
     )
     parser.add_argument(
         "--noansi",
         action='store_true',
-        help="clears out any ANSI escape sequences in the Bible verses output (if %%A or %%Z were used)"
+        help=help_noansi
     )
     parser.add_argument(
         "--open-config-folder",
         action='store_true',
-        help="opens the config folder"
+        help=help_open_config
     )
     parser.add_argument(
         "--open-module-folder",
         action='store_true',
-        help="opens the folder with MyBible modules"
+        help=help_open_module
     )
     parser.add_argument(
         "--j2t", "--json-to-tsv",
-        help="converts a json file to tsv (to edit a mapping file)"
+        help=help_j2t
     )
     parser.add_argument(
         "--check-tsv",
-        help="reports duplicates in the specified tsv file"
+        help=help_checktsv
     )
     parser.add_argument(
         "--t2j", "--tsv-to-json",
-        help="converts a tsv file to json (to use as a mapping file)"
+        help=help_t2j
     )
 
     args = parser.parse_args()
@@ -1075,14 +1208,16 @@ def main():
         return path
 
     modules_path = args.path if args.path else config.get('modules_path', '')
-    if args.path or not modules_path and not args.helpformat:
+    valid_path = validate_path(modules_path)
+    if not valid_path and not any([args.helpformat, args.open_config_folder, args.j2t, args.t2j, args.check_tsv]):
+        print("condition")
         # Validate the path to the modules (if -p is specified or no/wrong value is recorded in the config)
         while not validate_path(modules_path):
             if not os.path.isdir(modules_path):
-                print(f"{INVALID_PATH} {modules_path}")
+                print(invalid_path.format(modules_path=modules_path))
             elif not find_sqlite_files(modules_path):
-                print(f"{EMPTY_PATH} {modules_path}")
-            input_path = input(INPUT_PATH).strip()
+                print(empty_path.format(modules_path=modules_path))
+            input_path = input(in_path).strip()
             modules_path = resolve_home(input_path)
 
             # Save the valid path to the config file
@@ -1111,7 +1246,7 @@ def main():
     if args.j2t:
         json_file = args.j2t
         tsv_file = json_to_tsv(json_file)
-        print(f"TSV file created: {tsv_file}")
+        print(file_created.format(file=tsv_file))
         return
 
     # Handle the --check-tsv argument
@@ -1123,7 +1258,8 @@ def main():
     # Handle the --t2j argument
     if args.t2j:
         tsv_file = args.t2j
-        tsv_to_json(tsv_file)
+        json_file = tsv_to_json(tsv_file)
+        print(file_created.format(file=json_file))
         return
 
     # Handle the --format argument
@@ -1141,30 +1277,15 @@ def main():
 
     #Handle --helpformat argument
     if args.helpformat:
-        helpformat_message = textwrap.dedent(f"\n\
-            Available placeholders for the format string:\n\
-            \t  %f \t full book name\n\
-            \t  %a \t abbreviated book name\n\
-            \t  %b \t book number as per MyBible format specifications\n\
-            \t  %c \t chapter number\n\
-            \t  %v \t verse number\n\
-            \t  %T \t raw text of the verse from the module\n\
-            \t  %t \t text of the verse without markers; notes and line breaks are kept\n\
-            \t  %z \t the same as above, but without notes and line breaks\n\
-            \t  %A \t text of the verse with color output for console; Strong numbers are included\n\
-            \t  %Z \t the same as above, but without Strong numbers\n\
-            \t  %m \t module name\n\
-            Current default format is {start_bold}{format_string}{reset_to_normal}\n\
-            To save a new default, provide the format with {start_bold}-F{reset_to_normal}\n\
-            Format string may contain {start_bold}\\t{reset_to_normal} and {start_bold}\\n{reset_to_normal}\n\
-            Each verse in the output is printed on a new line and is formatted individually"
+        helpformat_message = textwrap.dedent(
+            help_helpformat_message.format(bold=start_bold, normal=reset_to_normal, format_string=format_string)
         )
         print(helpformat_message)
         return
 
     # Ensure required arguments if --list-modules is not used
     def report_args_error():
-        parser.error('The arguments -b/--module_name and -r/--reference are required unless -L/--list-modules is used.')
+        parser.error(parser_error)
 
     # Handle the --module_name argument
     if args.module_name:
@@ -1175,7 +1296,7 @@ def main():
                 module_file = file
                 break
         if not module_file:
-            print(f"No module named '{module_name}' found in '{modules_path}'.")
+            print(no_module.format(module_name=module_name, modules_path=modules_path))
             return
         module_path = os.path.join(modules_path, module_file)
     else:
@@ -1201,8 +1322,8 @@ def main():
         abbrs_file_path = ensure_abbrs_file(module_name, module_path)
         verses_count = load_verses_count(allverses_file_path)
         ranges = parse_range(reference, load_mapping(mapping_file), verses_count, load_mapping(abbrs_file_path))
-        if isinstance(ranges, str) and ranges == "Invalid reference for this module":
-            print(f"Cannot output {start_bold}{reference}{reset_to_normal}: {ranges.lower()}.")
+        if isinstance(ranges, str) and ranges == invalid_reference:
+            print(no_verse_ouput.format(bold=start_bold, reference=reference, normal=reset_to_normal), ranges.lower())
             return
         number_of_verses = calculate_verses_in_range(ranges, verses_count)
         verses_data = query_verses(module_path, ranges)
@@ -1223,4 +1344,4 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\nExiting now...")
+        print(exit_now)
