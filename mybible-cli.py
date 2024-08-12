@@ -10,10 +10,12 @@ import sqlite3
 import subprocess
 import textwrap
 import unicodedata
+import warnings
 
 # Config location (APP_NAME) is a folder name under ~/.config
 APP_NAME = 'mybible-cli'
 
+warnings.filterwarnings("ignore", category=DeprecationWarning)
 def get_default_config_path():
     if os.name == 'nt':
         return os.path.join(os.getenv('APPDATA'), APP_NAME)
@@ -24,7 +26,7 @@ def get_default_config_path():
             return os.path.join(os.path.expanduser('~'), '.config', APP_NAME)
 
 # Get system locale to get the language, set language to 'en' if not set
-language_country = locale.getlocale()[0]
+language_country = locale.getdefaultlocale()[0]
 if not language_country:
     language_country = "en_US"
 language, country = [part.lower() for part in re.split(r'[_\-]', language_country)]
