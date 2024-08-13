@@ -73,6 +73,8 @@ Running the script without any arguments will produce a short help message. Run 
 
 The script can list all the installed modules with `-L`. The list will be sorted by language and will include Bible modules only. When first invoked, it would take a few moments to query each file and get the required info. That info is then hashed and reused until modules are changed.
 
+![Listing](screenshots/list.png)
+
 ## Getting text of a Bible reference
 
 The most common usage would be calling the script with a module name and a reference to get the required text:  
@@ -95,6 +97,10 @@ Text of the reference can be output in five different ways:
 1. `%A` – MyBible markup is converted to ANSI escape sequences for pretty output in the terminal. Includes Strong's numbers
 1. `%Z` – the same as above, but without Strong's numbers  
    If you need Strong's numbers in the output, but don't want to get the escape sequences (for instance, when you pipe output of the script), there is an option `--noansi`. It has no effect on the output when the text is not formatted with `%A` or `%Z`.
+
+![Raw text](screenshots/raw_text.png "Raw Text")
+![Default output](screenshots/default_output.png "Default output")
+![ANSI colors](screenshots/ansi_colors.png "ANSI colors")
 
 ## Bible book names and abbreviations
 
