@@ -73,7 +73,7 @@ Running the script without any arguments will produce a short help message. Run 
 
 The script can list all the installed modules with `-L`. The list will be sorted by language and will include Bible modules only. When first invoked, it would take a few moments to query each file and get the required info. That info is then hashed and reused until modules are changed.
 
-![Listing](screenshots/list.png)
+<div align="center"><img src="screenshots/list.png" width="50%" alt="List" title="List"></div>
 
 ## Getting text of a Bible reference
 
