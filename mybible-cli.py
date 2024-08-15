@@ -93,6 +93,7 @@ default_l10n_strings = {
     'help_epilog': 'Parameter containing several tokens should be quoted: {bold}mybible-cli -b \"NIV\'11\" -r \"1 Pet 1:1\"{normal}',
     'help_path': 'path to the folder with MyBible module',
     'help_list': 'lists available MyBilbe modules',
+    'help_simplelist': 'lists available MyBible modules in a simple format',
     'help_modulename': 'name of the MyBible module to use',
     'help_reference': 'Bible reference to output',
     'help_abbr': 'reads Bible book names and abbreviations from a non-default file. With {bold}{italics}--abbr uk{normal} a file named {bold}{italics}uk_mapping.json{normal} located in the configuration folder will be used',
@@ -122,7 +123,7 @@ Current default format is {bold}{format_string}{normal}\n\
 To save a new default, provide the format with {bold}-F{normal}\n\
 Format string may contain {bold}\\t{normal} and {bold}\\n{normal}\n\
 Each verse in the output is printed on a new line and is formatted individually''',
-        'parser_error': 'Run with the arguments -b/--module_name and -r/--reference, or use one of the following: -L/--list-modules, --helpformat, --open-config-folder, --open-module-folder, --j2t/--json-to-tsv, --check-tsv, --t2j/--tsv-to-json',
+        'parser_error': 'Run with the arguments -b/--module_name and -r/--reference, or use one of the following: -L/--list-modules, --simple-list, --helpformat, --open-config-folder, --open-module-folder, --j2t/--json-to-tsv, --check-tsv, --t2j/--tsv-to-json',
     'file_exists_prompt': 'The file \'{file}\' already exists. Do you want to overwrite it? (yes/no): ',
     'yes_no_prompt': 'Please enter \'yes\' or \'no\'',
     'repeated_in_line': 'Repetitions in row {row}: {repeated_string}',
@@ -147,6 +148,7 @@ help_description = l10n_strings.get('help_description', default_l10n_strings['he
 help_epilog = l10n_strings.get('help_epilog', default_l10n_strings['help_epilog'])
 help_path = l10n_strings.get('help_path', default_l10n_strings['help_path'])
 help_list = l10n_strings.get('help_list', default_l10n_strings['help_list'])
+help_simplelist = l10n_strings.get('help_simplelist', default_l10n_strings['help_simplelist'])
 help_modulename = l10n_strings.get('help_modulename', default_l10n_strings['help_modulename'])
 help_reference = l10n_strings.get('help_reference', default_l10n_strings['help_reference'])
 help_abbr = l10n_strings.get('help_abbr', default_l10n_strings['help_abbr'])
@@ -348,7 +350,7 @@ def load_installed_modules_file():
     return None
 
 # Print all bible modules when -L or --list_modules is used
-def list_sqlite_files(path):
+def list_sqlite_files(path, view):
     # Load installed modules info if available
     installed_modules = load_installed_modules_file()
 
@@ -380,7 +382,11 @@ def list_sqlite_files(path):
         data = [installed_modules[file] for file in file_names]
         headers = ["Language", "Module", "Description"]
         data = sorted(data, key=lambda x: x[0])
-        output_table(data, headers, files)
+        if view == 'fancy':
+            output_table(data, headers, files)
+        else:
+            for bookinfo in data:
+                print('\t'.join([element.replace('\n', ' ') for element in bookinfo]))
     else:
         # Collect new info from each module
         data = []
@@ -400,7 +406,11 @@ def list_sqlite_files(path):
 
         # Print the collected data
         data = sorted(data, key=lambda x: x[0])
-        output_table(data, headers, files)
+        if view == 'fancy':
+            output_table(data, headers, files)
+        else:
+            for bookinfo in data:
+                print('\t'.join([element.replace('\n', ' ') for element in bookinfo]))
 
 # Get info (language and description) from the specified module
 def get_info(module, field_name):
@@ -1138,6 +1148,11 @@ def main():
         help=help_list
     )
     parser.add_argument(
+        "--simple-list",
+        action="store_true",
+        help=help_simplelist
+    )
+    parser.add_argument(
         "-m", "--module-name",
         help=help_modulename
     )
@@ -1212,7 +1227,6 @@ def main():
     modules_path = args.path if args.path else config.get('modules_path', '')
     valid_path = validate_path(modules_path)
     if not valid_path and not any([args.helpformat, args.open_config_folder, args.j2t, args.t2j, args.check_tsv]):
-        print("condition")
         # Validate the path to the modules (if -p is specified or no/wrong value is recorded in the config)
         while not validate_path(modules_path):
             if not os.path.isdir(modules_path):
@@ -1231,7 +1245,12 @@ def main():
 
     # Handle the --list-modules argument
     if args.list_modules:
-        list_sqlite_files(modules_path)
+        list_sqlite_files(modules_path, 'fancy')
+        return
+
+    # Handle the --simple-list argument
+    if args.simple_list:
+        list_sqlite_files(modules_path, 'simple')
         return
 
     # Handle the --open-config-folder argument
