@@ -1,0 +1,1 @@
+# OmegaT scripts to get text from MyBible modules
