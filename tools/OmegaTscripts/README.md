@@ -1,3 +1,4 @@
+## OmegaT scripts to get text from MyBible modules
 
 ### `utils_BibleSetup.groovy`
 
