@@ -47,7 +47,13 @@ def gui() {
         console.println("No source text")
         return
     }
-    refs=sourceText.findAll(/(I|\d)*\s*\p{L}+\.?\s*\d+([:\-—–\,\;]?\s*\d*)*/)
+    refs = []
+    regex = /[\dI]*\s*\p{L}+\s+\d+:\d+([-—–,;]?\s*\d+)*/
+    matcher = sourceText =~ regex
+    matcher.each { match ->
+    	refs.add(match[0])
+    }
+
     refs = refs.unique()
     if (refs.size() == 0) {
         console.println("Nothing to do in this segment")
@@ -57,7 +63,10 @@ def gui() {
     }
 
     refs.each() {
-        ref = it.replaceAll(/–/, /\-/)
+        ref = it
+        ref = ref.replaceAll(/–/, /\-/)
+        ref = ref.trim()
+        ref = ref.replaceAll(/[\:\;\.\,]$/, '')
         format = '-f %t'
         command = [exeFile, "-m", module, "-r", ref, format]
         process = command.execute()
@@ -65,8 +74,9 @@ def gui() {
         text = text.join(' ')
 
         // check for errors in the output (it would contain an ANSI seq.)
-        if (glossaryItem.contains('[1m')) {
+        if (text.contains('[1m')) {
             console.println("Couldn't find text for ${ref}")
+            //glossaryItem = ""
         } else {
             // build an entry to be stored in the glossary file
             glossaryItem = ref + "\t" + text + "\n"
