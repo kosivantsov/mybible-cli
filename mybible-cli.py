@@ -8,9 +8,13 @@ import os
 import re
 import sqlite3
 import subprocess
+import sys
 import textwrap
 import unicodedata
 import warnings
+
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+sys.stdout.reconfigure(encoding='utf-8')
 
 # Config location (APP_NAME) is a folder name under ~/.config
 APP_NAME = 'mybible-cli'
