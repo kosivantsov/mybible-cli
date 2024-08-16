@@ -48,10 +48,10 @@ def gui() {
         return
     }
     refs = []
-    regex = /[\dI]*\s*\p{L}+\s+\d+:\d+([-—–,;]?\s*\d+)*/
+    regex = /[I\d]*\s*\p{L}+\s+\d+([:-—–,;]?\s*\d+)*/
     matcher = sourceText =~ regex
     matcher.each { match ->
-    	refs.add(match[0])
+        refs.add(match[0])
     }
 
     refs = refs.unique()
