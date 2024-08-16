@@ -2,7 +2,7 @@
 
 ## `utils_BibleSetup.groovy`
 
-This is a script that would help OmegaT user in proper selection of the `mybible-cli` script/executable (filechooser) and the MyBible module for the current project (dropdown list). These settings are stored in `<script_folder>/.ini/bible.ini` (`mybible-cli` path) and `<project_folder>/.ini/bible.ini` (selected module). `mybible-cli` needs to be set up prior to being used in OmegaT via scripts.
+This is a script that would help OmegaT user in proper selection of the `mybible-cli` script/executable and the MyBible module for the current project. These settings are stored in `<script_folder>/.ini/bible.ini` (`mybible-cli` path) and `<project_folder>/.ini/bible.ini` (selected module). `mybible-cli` needs to be set up prior to being used in OmegaT via scripts.
 
 ## `utils_showBibleVerseInGlossary.groovy`
 
