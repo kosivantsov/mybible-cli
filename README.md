@@ -18,7 +18,12 @@ ln -s $(pwd)/mybible-cli.py $HOME/bin/mybible-cli
 
 This way you could run it by simply invoking `mybible-cli`, and it would update automatically when you pull changes in your local copy.
 
-For the program to be useful, you must have at least one MyBible module.
+If you use MS Windows and don't have Python installed, it's still possible to use the script. Download the [Windows build](https://github.com/kosivantsov/mybible-cli/releases/download/v.1.0/mybible-cli_windows.zip),
+unpack somewhere, and run `mybible-cli.exe` in the unpacked folder. When the zip is unpacked, you'll find `mybible-cli.exe` and a subfolder named `_internal`. Both are needed for the program to run.
+
+For the program to be useful (whether as a script or a Windows executable0, you must have at least one MyBible module.
+
+
 
 # Usage
 
@@ -126,3 +131,14 @@ The script allows opening its config folder and the folder with the MyBible modu
 
 This script's UI strings can be localized. The script will read its localization from a file `l10n/<lang>.properties` located in the configuration folder, where `<lang>` is a language code. If there is a .properties file with the same filename as the system's locale language code that file will be used. Any strings missing from the file will be output as they are hardcoded in the script. At the moment, only `en.properties` and `uk.properties` are available. Localization files have to be copied manually. 
 
+# Building into an executable to run without installing Python
+
+The script doesn't require to be built on GNU/Linux and macOS since these OSes have Python installed by default. On Windows with Python installed the script can run as is, without building.
+If you need to build a binary that will run without Python being installed on your system, it can be done with `pyinstaller`. Included you'll find the spec file. `pyinstaller` is not needed for the script to function,
+it's only purpose is to compile the script into a binary.
+1. Create a new venv: `python3.12 -m venv $HOME/pyinstaller-venv`
+1. Activate the venv: `source $HOME/pyinstaller-venv/Scripts/activate` or `cd $HOME; .\pyinstaller-venv\Scripts\activate`
+1. Install pyinstaller: `pip3 install pyinstaller`
+1. Go to `mybible-cli` source folder and build the binary: `cd src/mybible-cli; pyinstaller mybible-cly.spec`
+
+A folder with the executable and its dependencies will be found under `dist` subfolder.
