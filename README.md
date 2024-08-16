@@ -27,6 +27,8 @@ For the program to be useful (whether as a script or a Windows executable), you 
 
 # Usage
 
+This script/application can be used directly on the command line, or used in other [scripts and applications](./tools) to get Bible text. Below is a brief overview of its usage on the command line.
+
 ## First run
 
 When run for the first time (unless `-h`, `--help`, or `--helpformat` arguments were used), it will ask to specify a path to the folder with MyBible modules. The modules folder can be changed at any time using the `-p`, `--path` argument.
@@ -131,7 +133,7 @@ The script allows opening its config folder and the folder with the MyBible modu
 
 This script's UI strings can be localized. The script will read its localization from a file `l10n/<lang>.properties` located in the configuration folder, where `<lang>` is a language code. If there is a .properties file with the same filename as the system's locale language code that file will be used. Any strings missing from the file will be output as they are hardcoded in the script. At the moment, only `en.properties` and `uk.properties` are available. Localization files have to be copied manually. 
 
-# Building into an executable to run without installing Python
+# Building an executable to run without Python installation
 
 The script doesn't require to be built on GNU/Linux and macOS since these OSes have Python installed by default. On Windows with Python installed the script can run as is, without building.
 If you need to build a binary that will run without Python being installed on your system, it can be done with `pyinstaller`. Included you'll find the spec file. `pyinstaller` is not needed for the script to function,
