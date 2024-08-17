@@ -1,22 +1,92 @@
 /* :name = Utils - Bible Setup :description=Setup bible.ini globally and per-project to use mybible-cli and a desired module
  * @author  Kos Ivantsov
  * @date    2024-08-16
- * @version 0.2
+ * @update  2024-08-17 // Check for MyBible modules path
+ * @version 0.3
  */
 
-import org.omegat.util.Preferences
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+import java.nio.file.Paths
+import javax.swing.JComboBox
 import javax.swing.JFileChooser
 import javax.swing.JOptionPane
-import javax.swing.JComboBox
+import org.omegat.util.Preferences
 
+APP_NAME = 'mybible-cli'
+exit = false
+def getDefaultConfigPath() {
+    if (System.properties['os.name'].toLowerCase().contains('windows')) {
+        return Paths.get(System.getenv('APPDATA'), APP_NAME).toString()
+    } else if (System.properties['os.name'].toLowerCase().contains('mac')) {
+        return Paths.get(System.getProperty('user.home'), 'Library', 'Application Support', APP_NAME).toString()
+    } else { 
+        return Paths.get(System.getProperty('user.home'), '.config', APP_NAME).toString()
+    }
+}
+
+def getConfigFilePath() {
+    return Paths.get(getDefaultConfigPath(), 'config.json').toString()
+}
+
+def createConfigFile(configFile) {
+    def configDir = new File(configFile).parentFile
+    if (!configDir.exists()) {
+        configDir.mkdirs()
+    }
+
+    def defaultConfig = [modules_path: ""]
+    new File(configFile).withWriter('UTF-8') { writer ->
+        writer.write(JsonOutput.prettyPrint(JsonOutput.toJson(defaultConfig)))
+    }
+    console.println "Created default config file at $configFile"
+}
+
+def checkAndUpdateModulesPath() {
+    def configFile = getConfigFilePath()
+
+    if (!new File(configFile).exists()) {
+        createConfigFile(configFile)
+    }
+
+    def config = new JsonSlurper().parse(new File(configFile))
+
+    def modulesPath = config.modules_path
+    if (!modulesPath || !new File(modulesPath).isDirectory()) {
+        console.println "modules_path is not set or points to an invalid directory."
+
+        JFileChooser fc = new JFileChooser()
+        fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY)
+        fc.setFileHidingEnabled(false)
+        returnValue = fc.showDialog(null, "Select modules directory")
+
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            selectedDir = fc.getSelectedFile().absolutePath
+            config.modules_path = selectedDir
+            new File(configFile).withWriter('UTF-8') { writer ->
+                writer.write(JsonOutput.prettyPrint(JsonOutput.toJson(config)))
+            }
+            console.println("modules_path updated to: $selectedDir")
+            exit = false
+            return exit
+        } else {
+            console.println("No directory selected. modules_path remains unset.")
+            exit = true
+            return exit
+        }
+    }
+}
 
 prop = project.getProjectProperties()
-exit = true
 if (!prop) {
     console.println("No project open...")
     exit = true
     return
 } else {
+    exit = checkAndUpdateModulesPath()
+    if (exit) {
+        return
+    }
     exit = false
     genIniDir = new File(Preferences.getPreferenceDefault(Preferences.SCRIPTS_DIRECTORY, "") + File.separator + ".ini")
     genIniFile =  new File(genIniDir.toString() + File.separator + "bible.ini")
@@ -40,12 +110,12 @@ if (!prop) {
     if (!exePath || !exeFile.exists() || !exeFile.isFile()) {
         def loop = true
         while (loop) {
-            JFileChooser fc = new JFileChooser(
-                dialogTitle: "Select mybible-cli",
-                fileSelectionMode: JFileChooser.FILES_ONLY, 
-                multiSelectionEnabled: false)
-            if (fc.showOpenDialog() != JFileChooser.APPROVE_OPTION) {
-                console.println "Canceled"
+            JFileChooser fc = new JFileChooser()
+                fc.setFileSelectionMode(JFileChooser.FILES_ONLY)
+                fc.setMultiSelectionEnabled(false)
+                fc.setFileHidingEnabled(false)
+            if (fc.showDialog(null, "Select mybible-cli") != JFileChooser.APPROVE_OPTION) {
+                console.println "Cancelled"
                 return
             } else {
                 exePath = fc.getSelectedFile()
