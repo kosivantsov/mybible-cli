@@ -1,12 +1,15 @@
 /* :name=Utils - Show Bible Verse :description=Shows Bible verse in the glossary pane
  * @author  Kos Ivantsov
  * @date    2021-11-13 (based on diatheke and Sword modules)
- * @update  2024-08-16 (used utils_BibleSetup.groovy to set up mybible-cli and a MyBible module for the project)
+ * @update  2024-08-16 (uses utils_BibleSetup.groovy to set up mybible-cli and a MyBible module for the project)
+ * @update  2024-08-17 (improved logic to determine Bible references)
  * @version 0.3
  */
 
 import javax.swing.JOptionPane
 import org.omegat.util.Preferences
+import java.util.regex.Matcher
+import java.util.regex.Pattern
 
 def gui() {
     // check if project is open
@@ -47,19 +50,30 @@ def gui() {
         console.println("No source text")
         return
     }
+    initial_refs = []
     refs = []
-    regex = /[I\d]*\s*\p{L}+\s+\d+([:-—–,;]?\s*\d+)*/
+    // Find references without leading numbers (Corinthians instead of 1 Corinthians)
+    regex = /\p{L}+\.?\s+\d+(([:\-]\d+)*([\,\;]\s*\d+)*)*/
     matcher = sourceText =~ regex
     matcher.each { match ->
-        refs.add(match[0])
+        initial_refs.add(match[0])
     }
-
+    initial_refs = initial_refs.unique()
+    // Find if the reference had a leading number and add it with the found number
+    initial_refs.each { ref ->
+        possible_match = sourceText.findAll("[1-5I]+\\s*${ref}").join(', ')
+        if (possible_match) {
+            refs.add(possible_match.toString())
+        } else {
+            refs.add(ref)
+        }
+    }
     refs = refs.unique()
     if (refs.size() == 0) {
         console.println("Nothing to do in this segment")
         return
     } else {
-        console.println("References in the segment: $refs")
+        console.println("References in the segment: ${refs.join('; ')}")
     }
 
     refs.each() {
