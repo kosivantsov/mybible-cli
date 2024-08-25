@@ -1213,8 +1213,14 @@ def main():
         "--t2j", "--tsv-to-json",
         help=help_t2j
     )
+    parser.add_argument(
+        "--gui", "--GUI",
+        action='store_true',
+        help="GUI"
+    )
 
     args = parser.parse_args()
+    arguments = [x for x in sys.argv[1:] if x != '--gui']
 
     # Check config file existence and update path if needed
     config = read_config()
@@ -1285,6 +1291,15 @@ def main():
         tsv_file = args.t2j
         json_file = tsv_to_json(tsv_file)
         print(file_created.format(file=json_file))
+        return
+
+    # Handle the --gui argument
+    if args.gui:
+        script_directory = os.path.dirname(os.path.realpath(__file__))
+        mybiblegui_name = 'mybiblegui.py'
+        mybiblegui_path = os.path.join(script_directory, mybiblegui_name)
+        command = ['python3', mybiblegui_path] + arguments
+        subprocess.run(command, capture_output=True, text=True)
         return
 
     # Handle the --format argument
