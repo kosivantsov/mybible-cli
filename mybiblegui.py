@@ -8,6 +8,8 @@ from tkinter import Tk, filedialog, scrolledtext, Button, StringVar, OptionMenu
 import tkinter as tk
 import warnings
 
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+
 # Config location (APP_NAME) is a folder name under ~/.config
 APP_NAME = 'mybible-cli'
 
@@ -78,7 +80,7 @@ def check_and_update_executable():
     default_executable = os.path.join(script_directory, 'mybible-cli.py')
 
     if not executable_path or not os.path.isfile(executable_path):
-        if default_executable.exists():
+        if os.path.exists(default_executable):
             executable_path = str(default_executable)
             print(f"Using default executable path: {executable_path}")
         else:
@@ -106,12 +108,13 @@ def check_and_update_executable():
     return executable_path
 
 def run_program(executable, args):
-    command = [executable] + args
+    command = ['python3', executable] + args
     try:
         process = subprocess.Popen(command,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE,
-                                   text=True)
+                                   text=True,
+                                   encoding='utf-8')
         output, errors = process.communicate()
         output_text.delete("1.0", tk.END)  # Clear existing text
         output_text.insert(tk.END, output)
@@ -143,8 +146,8 @@ def update_text(*args):
 
 def get_dropdown_items(executable):
     try:
-        command = [executable, '--simple-list']
-        process = subprocess.Popen(command, stdout=subprocess.PIPE, text=True)
+        command = ['python3', executable, '--simple-list']
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, text=True, encoding='utf-8')
         output, _ = process.communicate()
         items = output.splitlines()
         return items
@@ -168,7 +171,7 @@ if __name__ == "__main__":
     root = tk.Tk()
     root.title("Bible Viewer")
     # Initial font settings
-    font_family = "Verdana"
+    font_family = "Arial"
     font_size = 12
 
     # Close the window on Esc key press
