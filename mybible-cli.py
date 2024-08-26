@@ -10,8 +10,12 @@ import sqlite3
 import subprocess
 import sys
 import textwrap
-import unicodedata
+import tkinter as tk
+import tkinter.font as tkFont
 import warnings
+import unicodedata
+from tkinter import Tk, filedialog, scrolledtext, Button, StringVar, OptionMenu, ttk, font
+from pathlib import Path
 
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 sys.stdout.reconfigure(encoding='utf-8')
@@ -111,6 +115,7 @@ default_l10n_strings = {
     'help_j2t': 'converts a json file to tsv (to edit a mapping file)',
     'help_checktsv': 'reports duplicates in the specified tsv file',
     'help_t2j': 'converts a tsv file to json (to use as a mapping file)',
+    'help_gui': 'outputs text in a GUI window',
     'help_helpformat_message': '''\nAvailable placeholders for the format string:\n\
     \t  %f \t full book name\n\
     \t  %a \t abbreviated book name\n\
@@ -166,6 +171,7 @@ help_open_module = l10n_strings.get('help_open_module', default_l10n_strings['he
 help_j2t = l10n_strings.get('help_j2t', default_l10n_strings['help_j2t'])
 help_checktsv = l10n_strings.get('help_checktsv', default_l10n_strings['help_checktsv'])
 help_t2j = l10n_strings.get('help_t2j', default_l10n_strings['help_t2j'])
+help_gui = l10n_strings.get('help_gui', default_l10n_strings['help_gui'])
 help_helpformat_message = l10n_strings.get('help_helpformat_message', default_l10n_strings['help_helpformat_message'])
 parser_error = l10n_strings.get('parser_error', default_l10n_strings['parser_error'])
 file_exists_prompt = l10n_strings.get('file_exists_prompt', default_l10n_strings['file_exists_prompt'])
@@ -272,7 +278,7 @@ DEFAULT_BOOK_MAPPING = \
 
 # Format json data so that each key with its values are on the same separate line
 def custom_json_dump(data):
-    # Create a custom JSON string with each list on the same line as its key
+    # Create a custom JSON string with each list of values on the same line as its key
     json_parts = []
     for key, value_list in data.items():
         values = ', '.join(json.dumps(v, ensure_ascii=False) for v in value_list)
@@ -312,7 +318,11 @@ def read_config():
         with open(CONFIG_FILE, 'r', encoding='utf-8') as file:
             config = json.load(file)
     else:
-        config = {'modules_path': ''}
+        config = {
+            'modules_path': '',
+            'font_family': 'Verdana',
+            'font_size': 12
+        }
         write_config(config)
     return config
 
@@ -327,6 +337,22 @@ def write_config(config):
 # Check if folder with modules exists and if it contains sqlite3 files
 def validate_path(path):
     return os.path.isdir(path) and any(fname.lower().endswith('.sqlite3') for fname in os.listdir(path))
+
+def select_modules_directory():
+    """
+    Opens a directory chooser dialog and returns the selected directory.
+    """
+    root = tk.Tk()
+    root.withdraw()  # Hide the root window
+
+    # Open the directory chooser dialog
+    selected_dir = filedialog.askdirectory(title="Select Directory")
+
+    # Optionally, you can show a message if no directory was selected
+    if not selected_dir:
+        selected_dir = None
+
+    return selected_dir
 
 # Get only sqlite3 files in the specified directory
 def find_sqlite_files(path):
@@ -389,8 +415,10 @@ def list_sqlite_files(path, view):
         if view == 'fancy':
             output_table(data, headers, files)
         else:
+            simplelist = []
             for bookinfo in data:
-                print('\t'.join([element.replace('\n', ' ') for element in bookinfo]))
+                simplelist.append('\t'.join([element.replace('\n', ' ') for element in bookinfo]))
+            return '\n'.join(simplelist)
     else:
         # Collect new info from each module
         data = []
@@ -413,8 +441,10 @@ def list_sqlite_files(path, view):
         if view == 'fancy':
             output_table(data, headers, files)
         else:
+            simplelist = []
             for bookinfo in data:
-                print('\t'.join([element.replace('\n', ' ') for element in bookinfo]))
+                simplelist.append('\t'.join([element.replace('\n', ' ') for element in bookinfo]))
+            return '\n'.join(simplelist)
 
 # Get info (language and description) from the specified module
 def get_info(module, field_name):
@@ -1216,7 +1246,7 @@ def main():
     parser.add_argument(
         "--gui", "--GUI",
         action='store_true',
-        help="GUI"
+        help=help_gui
     )
 
     args = parser.parse_args()
@@ -1243,7 +1273,7 @@ def main():
                 print(invalid_path.format(modules_path=modules_path))
             elif not find_sqlite_files(modules_path):
                 print(empty_path.format(modules_path=modules_path))
-            input_path = input(in_path).strip()
+            input_path = select_modules_directory() if args.gui else input(f"{in_path}\n").strip()
             modules_path = resolve_home(input_path)
 
             # Save the valid path to the config file
@@ -1260,7 +1290,8 @@ def main():
 
     # Handle the --simple-list argument
     if args.simple_list:
-        list_sqlite_files(modules_path, 'simple')
+        simplelist = list_sqlite_files(modules_path, 'simple')
+        print(simplelist)
         return
 
     # Handle the --open-config-folder argument
@@ -1295,11 +1326,163 @@ def main():
 
     # Handle the --gui argument
     if args.gui:
-        script_directory = os.path.dirname(os.path.realpath(__file__))
-        mybiblegui_name = 'mybiblegui.py'
-        mybiblegui_path = os.path.join(script_directory, mybiblegui_name)
-        command = ['python3', mybiblegui_path] + arguments
-        subprocess.run(command, capture_output=True, text=True)
+        # Rerun the script as another process
+        def run_program(executable, args):
+            command = [executable] + args
+            try:
+                process = subprocess.Popen(command,
+                                           stdout=subprocess.PIPE,
+                                           stderr=subprocess.PIPE,
+                                           text=True,
+                                           encoding='utf-8')
+                output, errors = process.communicate()
+                output_text.delete("1.0", tk.END)  # Clear existing text
+                output_text.insert(tk.END, output)
+                if errors:
+                    output_text.insert(tk.END, "\nERRORS:\n" + errors)
+            except Exception as e:
+                output_text.insert(tk.END, f"\nERROR: {e}")
+
+        def copy_text():
+            root.clipboard_clear()
+            root.clipboard_append(output_text.get("1.0", tk.END))
+
+        def increase_font(event=None):
+            current_size = output_text.cget("font").split()[-1]
+            font_family = ' '.join(output_text.cget("font").split()[0:-1])
+            font_family = re.sub(r'[{}]', '', font_family)
+            new_size = int(current_size) + 2
+            output_text.config(font=(font_family, new_size))
+            resize_window_based_on_text()
+            config['font_family'] = font_family
+            config['font_size'] = new_size
+            write_config(config)
+
+        def decrease_font(event=None):
+            current_size = output_text.cget("font").split()[-1]
+            font_family = ' '.join(output_text.cget("font").split()[0:-1])
+            font_family = re.sub(r'[{}]', '', font_family)
+            new_size = max(8, int(current_size) - 2)  # Prevent font size from going below 8
+            output_text.config(font=(font_family, new_size))
+            resize_window_based_on_text()
+            config['font_family'] = font_family
+            config['font_size'] = new_size
+            write_config(config)
+
+        def update_font(event):
+            selected_font = font_var.get()
+            font_size = output_text.cget("font").split()[-1]
+            output_text.config(font=(selected_font, font_size))
+            resize_window_based_on_text()
+            config['font_family'] = selected_font
+            config['font_size'] = font_size
+            write_config(config)
+
+        def resize_window_based_on_text(event=None):
+            # Get the text content
+            text_content = output_text.get(1.0, 'end-1c')
+
+            # Split the text into lines
+            lines = text_content.splitlines()
+
+            if not lines:  # If there are no lines, set default size
+                width = 100
+                height = 100
+            else:
+                # Get the longest line
+                max_line_length = max(len(line) for line in lines)
+
+                # Get the font being used by the ScrolledText widget
+                text_font = tkFont.Font(font=output_text['font'])
+
+                # Measure the size of a single character and a line
+                char_width = text_font.measure('W')  # Width of a single character 'W'
+                line_height = text_font.metrics('linespace')  # Height of a single line of text
+
+                # Calculate the required width and height for the window
+                width = max_line_length * char_width
+                height = (len(lines) * line_height) + (2 * line_height)
+
+            # Get the screen width and height
+            screen_width = root.winfo_screenwidth()
+            screen_height = root.winfo_screenheight()
+            # Ensure the window does not exceed screen dimensions
+            width = min(width + 20, screen_width)  # Add padding and ensure it does not exceed screen width
+            height = min(height + 20, screen_height)  # Add padding and ensure it does not exceed screen height
+            root.geometry(f"{width}x{height + 60}")
+
+
+        def update_text(*args):
+            selected_item = dropdown_var.get().split()[1]
+            if executable_path:
+                run_program(executable_path, arguments + ['-m', selected_item])
+            else:
+                output_text.insert(tk.END, "No executable path provided.")
+            resize_window_based_on_text()
+
+        def extract_value_from_args():
+            for i, arg in enumerate(arguments):
+                if arg == '-m' or arg == '--module' and i + 1 < len(sys.argv):
+                    return arguments[i + 1]
+            return None
+
+        root = tk.Tk()
+        root.title("Bible Viewer")
+        # Initial font settings
+        available_fonts = list(font.families())
+        font_family = config.get('font_family', 'Verdana')
+        font_size = config.get('font_size', 12)
+        font_var = tk.StringVar(value=available_fonts[0])
+
+        # Configure the grid to make the window resizable
+        root.grid_rowconfigure(0, weight=1)
+        root.grid_columnconfigure(0, weight=1)
+        # Create a scrolled text widget
+        output_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, font=(font_family, font_size))
+        output_text.pack(expand=True, fill='both')
+        output_text.grid(row=0, column=0, sticky="nsew", pady=(5, 5), padx=(5, 5))
+        # output_text.config(state=tk.DISABLED)
+        # Add buttons to increase/decrease font size
+        button_frame = tk.Frame(root)
+        button_frame.grid(row=1, column=0)
+        increase_button = tk.Button(button_frame, text="+", command=increase_font)
+        increase_button.grid(row=0, column=2, pady=(0, 10))
+        decrease_button = tk.Button(button_frame, text="-", command=decrease_font)
+        decrease_button.grid(row=0, column=1, pady=(0, 10))
+        # Add combobox to select font
+        select_font = ttk.Combobox(button_frame, textvariable=font_var, values=available_fonts)
+        select_font.grid(row=0, column=0, pady=(0, 5))
+        select_font.bind("<<ComboboxSelected>>", update_font)
+        if font_family in available_fonts:
+            select_font.set(font_family)
+        # Add a "Copy" button
+        copy_button = Button(button_frame, text="Copy Text", command=copy_text)
+        copy_button.grid(row=0, column=3, pady=(0, 10))
+        # Get dropdown items
+        items = list_sqlite_files(modules_path, 'simple').splitlines()
+        # Create a dropdown menu
+        dropdown_var = StringVar(root)
+
+        specified_module = extract_value_from_args()
+        executable_path = os.path.realpath(__file__)
+
+        if items:
+            # Set the default value based on the specified_module
+            default_value = next((item for item in items if item.split()[1] == specified_module), items[0])
+            dropdown_var.set(default_value)  # Set the default value
+            dropdown_menu = OptionMenu(root, dropdown_var, *items)
+            dropdown_menu.grid(row=2, column=0, padx=(10, 10), pady=(0, 10))
+            dropdown_var.trace_add("write", update_text)  # Refresh text when selection changes
+            # Run the program with initial arguments
+        run_program(executable_path, arguments + (['-m', specified_module] if specified_module else []))
+        # Close the window on Esc key press
+        root.bind('<Escape>', lambda event: root.destroy())
+        root.bind('<plus>', increase_font)
+        root.bind('<equal>', increase_font)
+        root.bind('<minus>', decrease_font)
+        resize_window_based_on_text()
+        # output_text.config(state=tk.DISABLED)
+        root.mainloop()
         return
 
     # Handle the --format argument
