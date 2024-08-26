@@ -340,17 +340,11 @@ def validate_path(path):
 
 def select_modules_directory():
     """Opens a directory chooser dialog and returns the selected directory."""
-    root = tk.Tk()
-    root.protocol("WM_DELETE_WINDOW", sys.exit)
-    root.withdraw()  # Hide the root window
-
-    # Open the directory chooser dialog
     selected_dir = filedialog.askdirectory(title="Select Directory")
 
     # Optionally, you can show a message if no directory was selected
     if not selected_dir:
-        selected_dir = None
-        return
+        selected_dir = "! User-canceled !"
     return selected_dir
 
 # Get only sqlite3 files in the specified directory
@@ -1273,6 +1267,8 @@ def main():
             elif not find_sqlite_files(modules_path):
                 print(empty_path.format(modules_path=modules_path))
             input_path = select_modules_directory() if args.gui else input(f"{in_path}\n").strip()
+            if input_path == "! User-canceled !":
+                return
             modules_path = resolve_home(input_path)
 
             # Save the valid path to the config file
@@ -1411,7 +1407,7 @@ def main():
             # Ensure the window does not exceed screen dimensions
             width = min(width + 20, screen_width // 3)  # Add padding and ensure it does not exceed screen width
             height = min(height + 20, screen_height)  # Add padding and ensure it does not exceed screen height
-            root.geometry(f"{width}x{height + 60}")
+            root.geometry(f"{width}x{height + 100}")
 
 
         def update_text(*args):
