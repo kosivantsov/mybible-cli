@@ -339,10 +339,9 @@ def validate_path(path):
     return os.path.isdir(path) and any(fname.lower().endswith('.sqlite3') for fname in os.listdir(path))
 
 def select_modules_directory():
-    """
-    Opens a directory chooser dialog and returns the selected directory.
-    """
+    """Opens a directory chooser dialog and returns the selected directory."""
     root = tk.Tk()
+    root.protocol("WM_DELETE_WINDOW", sys.exit)
     root.withdraw()  # Hide the root window
 
     # Open the directory chooser dialog
@@ -351,7 +350,7 @@ def select_modules_directory():
     # Optionally, you can show a message if no directory was selected
     if not selected_dir:
         selected_dir = None
-
+        return
     return selected_dir
 
 # Get only sqlite3 files in the specified directory
@@ -1327,8 +1326,11 @@ def main():
     # Handle the --gui argument
     if args.gui:
         # Rerun the script as another process
-        def run_program(executable, args):
-            command = [executable] + args
+        def run_program(executable, args, runtime=None):
+            if runtime:
+                command = [runtime, executable] + args
+            else:
+                command = [executable] + args
             try:
                 process = subprocess.Popen(command,
                                            stdout=subprocess.PIPE,
@@ -1407,7 +1409,7 @@ def main():
             screen_width = root.winfo_screenwidth()
             screen_height = root.winfo_screenheight()
             # Ensure the window does not exceed screen dimensions
-            width = min(width + 20, screen_width)  # Add padding and ensure it does not exceed screen width
+            width = min(width + 20, screen_width // 3)  # Add padding and ensure it does not exceed screen width
             height = min(height + 20, screen_height)  # Add padding and ensure it does not exceed screen height
             root.geometry(f"{width}x{height + 60}")
 
@@ -1428,6 +1430,14 @@ def main():
 
         root = tk.Tk()
         root.title("Bible Viewer")
+        # Try to add an icon 
+        png_file_name = "icon.png"
+        script_dir = os.path.dirname(os.path.realpath(__file__))
+        png_path = os.path.join(script_dir, "icons", png_file_name)
+        if os.path.exists(png_path):
+            icon = tk.PhotoImage(file=png_path)
+            root.iconphoto(True, icon)
+
         # Initial font settings
         available_fonts = list(font.families())
         font_family = config.get('font_family', 'Verdana')
@@ -1464,7 +1474,14 @@ def main():
         dropdown_var = StringVar(root)
 
         specified_module = extract_value_from_args()
-        executable_path = os.path.realpath(__file__)
+        if getattr(sys, 'frozen', False):
+            # If the script is running as a PyInstaller executable
+            executable_path = os.path.realpath(sys.argv[0])
+            runtime = None
+        else:
+            # If the script is running as a regular Python script
+            executable_path = os.path.realpath(__file__)
+            runtime = sys.executable
 
         if items:
             # Set the default value based on the specified_module
@@ -1473,8 +1490,9 @@ def main():
             dropdown_menu = OptionMenu(root, dropdown_var, *items)
             dropdown_menu.grid(row=2, column=0, padx=(10, 10), pady=(0, 10))
             dropdown_var.trace_add("write", update_text)  # Refresh text when selection changes
-            # Run the program with initial arguments
-        run_program(executable_path, arguments + (['-m', specified_module] if specified_module else []))
+        
+        # Run the program with initial arguments
+        run_program(executable_path, arguments + (['-m', specified_module] if specified_module else []), runtime)
         # Close the window on Esc key press
         root.bind('<Escape>', lambda event: root.destroy())
         root.bind('<plus>', increase_font)
@@ -1482,6 +1500,7 @@ def main():
         root.bind('<minus>', decrease_font)
         resize_window_based_on_text()
         # output_text.config(state=tk.DISABLED)
+        root.protocol("WM_DELETE_WINDOW", sys.exit)
         root.mainloop()
         return
 
