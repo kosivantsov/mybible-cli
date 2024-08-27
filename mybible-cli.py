@@ -1540,7 +1540,7 @@ def main():
         copy_button = Button(button_frame, text=gui_copy, command=copy_text)
         copy_button.grid(row=0, column=3, pady=(0, 10))
         # Add format string button
-        format_button = Button(button_frame, text="Format verses", command=input_format_string)
+        format_button = Button(button_frame, text=gui_format_verses, command=input_format_string)
         format_button.grid(row=0, column=4, pady=(0, 10))
         # Get dropdown items
         items = list_sqlite_files(modules_path, 'simple').splitlines()
