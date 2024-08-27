@@ -14,8 +14,8 @@ import tkinter as tk
 import tkinter.font as tkFont
 import warnings
 import unicodedata
-from tkinter import Tk, filedialog, scrolledtext, Button, StringVar, OptionMenu, ttk, font
-from pathlib import Path
+from tkinter import Tk, filedialog, scrolledtext, Button, StringVar, OptionMenu, ttk, font, simpledialog
+# from pathlib import Path
 
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 sys.stdout.reconfigure(encoding='utf-8')
@@ -138,7 +138,9 @@ Each verse in the output is printed on a new line and is formatted individually'
     'repeated_in_line': 'Repetitions in row {row}: {repeated_string}',
     'repeated_in_file': 'Repetitions of {element} in rows {rows}',
     'gui_title': 'Bible text',
-    'gui_copy': 'Copy displayed text'
+    'gui_copy': 'Copy displayed text',
+    'gui_format_verses': 'Format verses',
+    'gui_save': 'Save',
 }
 
 # Load l10n data or use defaults
@@ -182,6 +184,8 @@ repeated_in_line = l10n_strings.get('repeated_in_line', default_l10n_strings['re
 repeated_in_file = l10n_strings.get('repeated_in_file', default_l10n_strings['repeated_in_file'])
 gui_title = l10n_strings.get('gui_title', default_l10n_strings['gui_title'])
 gui_copy = l10n_strings.get('gui_copy', default_l10n_strings['gui_copy'])
+gui_format_verses = l10n_strings.get('gui_format_verses', default_l10n_strings['gui_format_verses'])
+gui_save = l10n_strings.get('gui_save', default_l10n_strings['gui_save'])
 
 # Default book mapping content
 DEFAULT_BOOK_MAPPING = \
@@ -1333,6 +1337,31 @@ def main():
         print(file_created.format(file=json_file))
         return
 
+    # Handle the --format argument
+    format_string = None
+    if args.format:
+        format_string = args.format
+    if not format_string:
+        format_string = config.get('format_string') if config.get('format_string') else "%f %c:%v: %t (%m)"
+
+    # Handle the --save-format argument
+    if args.save_format:
+        format_string = args.save_format
+        config['format_string'] = format_string
+        write_config(config)
+
+    #Handle --helpformat argument
+    if args.helpformat:
+        helpformat_message = textwrap.dedent(
+            help_helpformat_message.format(bold=start_bold, normal=reset_to_normal, format_string=format_string)
+        )
+        print(helpformat_message)
+        return
+
+    # Ensure required arguments if --list-modules is not used
+    def report_args_error():
+        parser.error(parser_error)
+
     # Handle the --gui argument
     if args.gui:
         # Rerun the script as another process
@@ -1358,6 +1387,39 @@ def main():
         def copy_text():
             root.clipboard_clear()
             root.clipboard_append(output_text.get("1.0", tk.END))
+
+        def input_format_string():
+            dialog = tk.Toplevel(root)
+            dialog.title(gui_format_verses)
+            input_format_string_var = tk.StringVar()
+            input_format_string_var.set(format_string)
+            text_message = '\n'.join(help_helpformat_message.replace('\t', '').splitlines()[:-4]).strip()
+            input_label = tk.Label(dialog, text=text_message, anchor='w', justify='left')
+            input_label.pack(fill='x', pady=10)
+            input_entry = tk.Entry(dialog, textvariable=input_format_string_var)
+            input_entry.pack(pady=10)
+            # Save button
+            def save_and_close():
+                # Store the input in the global variable
+                global stored_input_format_string
+                stored_input_format_string = input_format_string_var.get()
+                format_string = input_format_string_var.get()
+                config['format_string'] = format_string
+                write_config(config)
+                # arguments = update_arguments('-F', format_string)
+                if executable_path:
+                    run_program(executable_path, arguments, runtime)
+                else:
+                    output_text.insert(tk.END, "No executable path provided.")
+                dialog.destroy()
+
+            save_button = tk.Button(dialog, text=gui_save, command=save_and_close)
+            save_button.pack(pady=10)
+            # Ensure the dialog window is modal
+            dialog.transient(root)
+            dialog.grab_set()
+            dialog.bind('<Escape>', lambda event: dialog.destroy())
+            root.wait_window(dialog)
 
         def increase_font(event=None):
             current_size = output_text.cget("font").split()[-1]
@@ -1393,12 +1455,14 @@ def main():
         def resize_window_based_on_text(event=None):
             # Get the text content
             text_content = output_text.get(1.0, 'end-1c')
-
             # Split the text into lines
             lines = text_content.splitlines()
+            #get the width of the button_frame
+            root.update_idletasks()
+            button_frame_width = button_frame.winfo_reqwidth()
 
             if not lines:  # If there are no lines, set default size
-                width = 100
+                width = button_frame_width + 40
                 height = 100
             else:
                 # Get the longest line
@@ -1414,20 +1478,22 @@ def main():
                 # Calculate the required width and height for the window
                 width = max_line_length * char_width
                 height = (len(lines) * line_height) + (2 * line_height)
-
             # Get the screen width and height
             screen_width = root.winfo_screenwidth()
             screen_height = root.winfo_screenheight()
             # Ensure the window does not exceed screen dimensions
-            width = min(width + 20, screen_width // 3)  # Add padding and ensure it does not exceed 1/3 of screen width
-            height = min(height + 20, screen_height)  # Add padding and ensure it does not exceed screen height
+            width = max(button_frame_width + 20, width)
+            width = min(width, screen_width // 2)
+            height = min(height + 20, screen_height)
             root.geometry(f"{width}x{height + 100}")
 
-
         def update_text(*args):
-            selected_item = dropdown_var.get().split()[1]
+            module_name = dropdown_var.get().split()[1]
+            config['module_name'] = module_name
+            write_config(config)
+            arguments = update_arguments('-m', module_name)
             if executable_path:
-                run_program(executable_path, arguments + ['-m', selected_item])
+                run_program(executable_path, arguments, runtime)
             else:
                 output_text.insert(tk.END, "No executable path provided.")
             resize_window_based_on_text()
@@ -1450,10 +1516,10 @@ def main():
 
         # Configure the grid to make the window resizable
         root.grid_rowconfigure(0, weight=1)
-        root.grid_columnconfigure(0, weight=1)
+        root.grid_columnconfigure(0, weight=4)
         # Create a scrolled text widget
         output_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, font=(font_family, font_size))
-        output_text.pack(expand=True, fill='both')
+        # output_text.pack(expand=True, fill='both')
         output_text.grid(row=0, column=0, sticky="nsew", pady=(5, 5), padx=(5, 5))
         # output_text.config(state=tk.DISABLED)
         # Add buttons to increase/decrease font size
@@ -1472,12 +1538,14 @@ def main():
         # Add a "Copy" button
         copy_button = Button(button_frame, text=gui_copy, command=copy_text)
         copy_button.grid(row=0, column=3, pady=(0, 10))
+        # Add format string button
+        format_button = Button(button_frame, text="Format verses", command=input_format_string)
+        format_button.grid(row=0, column=4, pady=(0, 10))
         # Get dropdown items
         items = list_sqlite_files(modules_path, 'simple').splitlines()
         # Create a dropdown menu
         dropdown_var = StringVar(root)
 
-        specified_module = module_name
         if getattr(sys, 'frozen', False):
             # If the script is running as a PyInstaller executable
             executable_path = os.path.realpath(sys.argv[0])
@@ -1490,57 +1558,46 @@ def main():
             write_config(config)
 
         if items:
-            # Set the default value based on the specified_module
-            default_value = next((item for item in items if item.split()[1] == specified_module), items[0])
+            # Set the default value based on the module_name
+            default_value = next((item for item in items if item.split()[1] == module_name), items[0])
+            if not module_name:
+                config['module_name'] = default_value.split()[1]
+                write_config(config)
             dropdown_var.set(default_value)  # Set the default value
             dropdown_menu = OptionMenu(root, dropdown_var, *items)
             dropdown_menu.grid(row=2, column=0, padx=(10, 10), pady=(0, 10))
             dropdown_var.trace_add("write", update_text)  # Refresh text when selection changes
 
         # Run the program with initial arguments
-        def set_module_name():
+        def update_arguments(argument, value):
+            format_arg = ['-f', '--format', '-F', '--save-format']
+            module_arg = ['-m', '--module']
             for i, arg in enumerate(arguments):
-                if arg == '-m' or arg == '--module' and i + 1 < len(arguments):
-                    arguments[i] = '-m'
-                    arguments[i + 1] = module_name
+                if arg == argument:
+                    if arg in format_arg:
+                        arguments[i] = '-F'
+                        if i + 1 < len(arguments):  # Ensure the index is within bounds
+                            arguments[i + 1] = value
+                    elif arg in module_arg:
+                        arguments[i] = '-m'
+                        if i + 1 < len(arguments):  # Ensure the index is within bounds
+                            arguments[i + 1] = value
+                        break
             return arguments
-        arguments = set_module_name()
+        arguments = update_arguments('-m', module_name)
+        arguments = update_arguments('-f', format_string)
         run_program(executable_path, arguments, runtime)
         # Close the window on Esc key press
         root.bind('<Escape>', lambda event: root.destroy())
+        # Increase/decrease font with +/-
         root.bind('<plus>', increase_font)
         root.bind('<equal>', increase_font)
         root.bind('<minus>', decrease_font)
         resize_window_based_on_text()
-        # output_text.config(state=tk.DISABLED)
+        root.after(100, resize_window_based_on_text)
         root.protocol("WM_DELETE_WINDOW", sys.exit)
         root.mainloop()
         return
-
-    # Handle the --format argument
-    format_string = None
-    if args.format:
-        format_string = args.format
-    if not format_string:
-        format_string = config.get('format_string') if config.get('format_string') else "%f %c:%v: %t (%m)"
-
-    # Handle the --save-format argument
-    if args.save_format:
-        format_string = args.save_format
-        config['format_string'] = format_string
-        write_config(config)
-
-    #Handle --helpformat argument
-    if args.helpformat:
-        helpformat_message = textwrap.dedent(
-            help_helpformat_message.format(bold=start_bold, normal=reset_to_normal, format_string=format_string)
-        )
-        print(helpformat_message)
-        return
-
-    # Ensure required arguments if --list-modules is not used
-    def report_args_error():
-        parser.error(parser_error)
 
     # Handle the --module_name argument
     if args.module_name:
