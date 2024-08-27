@@ -1338,11 +1338,14 @@ def main():
         return
 
     # Handle the --format argument
-    format_string = None
-    if args.format:
-        format_string = args.format
-    if not format_string:
-        format_string = config.get('format_string') if config.get('format_string') else "%f %c:%v: %t (%m)"
+    def update_format_string():
+        format_string = None
+        if args.format:
+            format_string = args.format
+        if not format_string:
+            format_string = config.get('format_string') if config.get('format_string') else "%f %c:%v: %t (%m)"
+        return format_string
+    format_string = update_format_string()
 
     # Handle the --save-format argument
     if args.save_format:
@@ -1392,7 +1395,7 @@ def main():
             dialog = tk.Toplevel(root)
             dialog.title(gui_format_verses)
             input_format_string_var = tk.StringVar()
-            input_format_string_var.set(format_string)
+            input_format_string_var.set(update_format_string())
             text_message = '\n'.join(help_helpformat_message.replace('\t', '').splitlines()[:-4]).strip()
             input_label = tk.Label(dialog, text=text_message, anchor='w', justify='left')
             input_label.pack(fill='x', pady=10)
@@ -1406,7 +1409,7 @@ def main():
                 format_string = input_format_string_var.get()
                 config['format_string'] = format_string
                 write_config(config)
-                # arguments = update_arguments('-F', format_string)
+                arguments = update_arguments('-F', format_string)
                 if executable_path:
                     run_program(executable_path, arguments, runtime)
                 else:
