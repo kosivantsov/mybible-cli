@@ -92,7 +92,7 @@ default_l10n_strings = {
     'exit_now': '\nExiting now...',
     'available_modules': '\nAvailable MyBible modules: {number}',
     'invalid_reference': '\nInvalid reference for this module',
-    'no_verse_ouput': '\nCannon output {bold}{reference}{normal}:',
+    'no_verse_ouput': '\nCannon output {reference}:',
     'error': 'Error!',
     'folder_fail': 'Failed to open the folder: {error}',
     'file_fail': 'Failed to open {file}',
@@ -136,7 +136,9 @@ Each verse in the output is printed on a new line and is formatted individually'
     'file_exists_prompt': 'The file \'{file}\' already exists. Do you want to overwrite it? (yes/no): ',
     'yes_no_prompt': 'Please enter \'yes\' or \'no\'',
     'repeated_in_line': 'Repetitions in row {row}: {repeated_string}',
-    'repeated_in_file': 'Repetitions of {element} in rows {rows}'
+    'repeated_in_file': 'Repetitions of {element} in rows {rows}',
+    'gui_title': 'Bible text',
+    'gui_copy': 'Copy displayed text'
 }
 
 # Load l10n data or use defaults
@@ -178,6 +180,8 @@ file_exists_prompt = l10n_strings.get('file_exists_prompt', default_l10n_strings
 yes_no_prompt = l10n_strings.get('yes_no_prompt', default_l10n_strings['yes_no_prompt'])
 repeated_in_line = l10n_strings.get('repeated_in_line', default_l10n_strings['repeated_in_line'])
 repeated_in_file = l10n_strings.get('repeated_in_file', default_l10n_strings['repeated_in_file'])
+gui_title = l10n_strings.get('gui_title', default_l10n_strings['gui_title'])
+gui_copy = l10n_strings.get('gui_copy', default_l10n_strings['gui_copy'])
 
 # Default book mapping content
 DEFAULT_BOOK_MAPPING = \
@@ -320,8 +324,10 @@ def read_config():
     else:
         config = {
             'modules_path': '',
+            'module_name': '',
             'font_family': 'Verdana',
-            'font_size': 12
+            'font_size': 12,
+            'runtime': ''
         }
         write_config(config)
     return config
@@ -1237,16 +1243,16 @@ def main():
         help=help_t2j
     )
     parser.add_argument(
-        "--gui", "--GUI",
+        "--gui",
         action='store_true',
         help=help_gui
     )
 
-    args = parser.parse_args()
-    arguments = [x for x in sys.argv[1:] if x != '--gui']
-
     # Check config file existence and update path if needed
     config = read_config()
+
+    args = parser.parse_args()
+    arguments = [x for x in sys.argv[1:] if x != '--gui']
 
     # Determine the path to the modules
     def resolve_home(path):
@@ -1273,6 +1279,14 @@ def main():
 
             # Save the valid path to the config file
         config['modules_path'] = modules_path
+        write_config(config)
+
+    if not args.module_name:
+        module_name = config['module_name']
+        args.module_name = module_name
+    else:
+        config['module_name'] = args.module_name
+        module_name = args.module_name
         write_config(config)
 
     # Check for the default json file with book names and abbreviations
@@ -1405,7 +1419,7 @@ def main():
             screen_width = root.winfo_screenwidth()
             screen_height = root.winfo_screenheight()
             # Ensure the window does not exceed screen dimensions
-            width = min(width + 20, screen_width // 3)  # Add padding and ensure it does not exceed screen width
+            width = min(width + 20, screen_width // 3)  # Add padding and ensure it does not exceed 1/3 of screen width
             height = min(height + 20, screen_height)  # Add padding and ensure it does not exceed screen height
             root.geometry(f"{width}x{height + 100}")
 
@@ -1418,15 +1432,9 @@ def main():
                 output_text.insert(tk.END, "No executable path provided.")
             resize_window_based_on_text()
 
-        def extract_value_from_args():
-            for i, arg in enumerate(arguments):
-                if arg == '-m' or arg == '--module' and i + 1 < len(sys.argv):
-                    return arguments[i + 1]
-            return None
-
         root = tk.Tk()
-        root.title("Bible Viewer")
-        # Try to add an icon 
+        root.title(gui_title)
+        # Try to add an icon
         png_file_name = "icon.png"
         script_dir = os.path.dirname(os.path.realpath(__file__))
         png_path = os.path.join(script_dir, "icons", png_file_name)
@@ -1462,14 +1470,14 @@ def main():
         if font_family in available_fonts:
             select_font.set(font_family)
         # Add a "Copy" button
-        copy_button = Button(button_frame, text="Copy Text", command=copy_text)
+        copy_button = Button(button_frame, text=gui_copy, command=copy_text)
         copy_button.grid(row=0, column=3, pady=(0, 10))
         # Get dropdown items
         items = list_sqlite_files(modules_path, 'simple').splitlines()
         # Create a dropdown menu
         dropdown_var = StringVar(root)
 
-        specified_module = extract_value_from_args()
+        specified_module = module_name
         if getattr(sys, 'frozen', False):
             # If the script is running as a PyInstaller executable
             executable_path = os.path.realpath(sys.argv[0])
@@ -1478,6 +1486,8 @@ def main():
             # If the script is running as a regular Python script
             executable_path = os.path.realpath(__file__)
             runtime = sys.executable
+            config['runtime'] = os.path.realpath(sys.executable)
+            write_config(config)
 
         if items:
             # Set the default value based on the specified_module
@@ -1486,9 +1496,16 @@ def main():
             dropdown_menu = OptionMenu(root, dropdown_var, *items)
             dropdown_menu.grid(row=2, column=0, padx=(10, 10), pady=(0, 10))
             dropdown_var.trace_add("write", update_text)  # Refresh text when selection changes
-        
+
         # Run the program with initial arguments
-        run_program(executable_path, arguments + (['-m', specified_module] if specified_module else []), runtime)
+        def set_module_name():
+            for i, arg in enumerate(arguments):
+                if arg == '-m' or arg == '--module' and i + 1 < len(arguments):
+                    arguments[i] = '-m'
+                    arguments[i + 1] = module_name
+            return arguments
+        arguments = set_module_name()
+        run_program(executable_path, arguments, runtime)
         # Close the window on Esc key press
         root.bind('<Escape>', lambda event: root.destroy())
         root.bind('<plus>', increase_font)
@@ -1561,7 +1578,7 @@ def main():
         verses_count = load_verses_count(allverses_file_path)
         ranges = parse_range(reference, load_mapping(mapping_file), verses_count, load_mapping(abbrs_file_path))
         if isinstance(ranges, str) and ranges == invalid_reference:
-            print(no_verse_ouput.format(bold=start_bold, reference=reference, normal=reset_to_normal), ranges.lower())
+            print(no_verse_ouput.format(reference=args.reference), ranges.lower())
             return
         number_of_verses = calculate_verses_in_range(ranges, verses_count)
         verses_data = query_verses(module_path, ranges)
