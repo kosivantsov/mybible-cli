@@ -1522,9 +1522,7 @@ def main():
         root.grid_columnconfigure(0, weight=4)
         # Create a scrolled text widget
         output_text = scrolledtext.ScrolledText(root, wrap=tk.WORD, font=(font_family, font_size))
-        # output_text.pack(expand=True, fill='both')
         output_text.grid(row=0, column=0, sticky="nsew", pady=(5, 5), padx=(5, 5))
-        # output_text.config(state=tk.DISABLED)
         # Add buttons to increase/decrease font size
         button_frame = tk.Frame(root)
         button_frame.grid(row=1, column=0)
@@ -1590,6 +1588,7 @@ def main():
         arguments = update_arguments('-m', module_name)
         arguments = update_arguments('-f', format_string)
         run_program(executable_path, arguments, runtime)
+        output_text.config(state=tk.DISABLED)
         # Close the window on Esc key press
         root.bind('<Escape>', lambda event: root.destroy())
         # Increase/decrease font with +/-
