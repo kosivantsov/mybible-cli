@@ -647,7 +647,9 @@ def parse_reference_part(part, mapping, verses_count, abbrs_mapping, prev_book=N
     tokens = part.strip().split()
 
     if not tokens:
+        print(invalid_reference)
         raise ValueError("Invalid reference format")
+
 
     book_number = None
     for i in range(len(tokens), 0, -1):
@@ -1634,6 +1636,7 @@ def main():
     # Handle the --reference argument
     if args.reference:
         reference = replace_funny_spaces(args.reference).lower()
+        reference = re.sub(r'[\[\(<]+|[\.,:\-–—\]\)>]+$', '', reference)
         allverses_file_path = ensure_allverses_file(module_name, module_path)
         abbrs_file_path = ensure_abbrs_file(module_name, module_path)
         verses_count = load_verses_count(allverses_file_path)
