@@ -22,11 +22,16 @@ pip install pyinstaller
 REM 5. Run PyInstaller with the specified .spec file
 REM To handle prompts automatically, use `yes` if needed
 echo Running PyInstaller...
+if exist "dist\mybible-cli" (
+    rmdir /S /Q "dist\mybible-cli"
+)
+if exist "build\mybible-cli" (
+    rmdir /S /Q "build\mybible-cli"
+)
 echo Y | pyinstaller mybible-cli.spec
 
 REM 6. Copy 'myfile.cmd' to .\dest\myscript\
 echo Copying files to .\dist\mybible-cli\...
-if not exist "dist\mybible-cli" mkdir "dist\mybible-cli"
 copy clip2bible.* dist\mybible-cli\
 
 REM Deactivate the virtual environment
