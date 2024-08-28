@@ -18,7 +18,7 @@ ln -s $(pwd)/mybible-cli.py $HOME/bin/mybible-cli
 
 This way you could run it by simply invoking `mybible-cli`, and it would update automatically when you pull changes in your local copy.
 
-If you use MS Windows and don't have Python installed, it's still possible to use the script. Download the [Windows build](https://github.com/kosivantsov/mybible-cli/releases/download/v.1.0/mybible-cli_windows.zip),
+If you use MS Windows and don't have Python installed, it's still possible to use the script. Download the [Windows build](https://github.com/kosivantsov/mybible-cli/releases/download/latest/mybible-cli_windows.zip),
 unpack somewhere, and run `mybible-cli.exe` in the unpacked folder. When the zip is unpacked, you'll find `mybible-cli.exe` and a subfolder named `_internal`. Both are needed for the program to run.
 
 For the program to be useful (whether as a script or a Windows executable), you must have at least one MyBible module.
