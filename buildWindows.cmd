@@ -32,7 +32,7 @@ echo Y | pyinstaller mybible-cli.spec
 
 REM 6. Copy 'myfile.cmd' to .\dest\myscript\
 echo Copying files to .\dist\mybible-cli\...
-copy clip2bible.* dist\mybible-cli\
+copy tools\scripts\clip2bible.cmd dist\mybible-cli\
 
 REM Deactivate the virtual environment
 echo Deactivating virtual environment...
