@@ -1380,12 +1380,15 @@ def main():
                                            text=True,
                                            encoding='utf-8')
                 output, errors = process.communicate()
+                output_text.config(state=tk.NORMAL)
                 output_text.delete("1.0", tk.END)  # Clear existing text
                 output_text.insert(tk.END, output)
                 if errors:
                     output_text.insert(tk.END, "\nERRORS:\n" + errors)
             except Exception as e:
+                output_text.config(state=tk.NORMAL)
                 output_text.insert(tk.END, f"\nERROR: {e}")
+            output_text.config(state=tk.DISABLED)
 
         def copy_text():
             root.clipboard_clear()
@@ -1588,7 +1591,6 @@ def main():
         arguments = update_arguments('-m', module_name)
         arguments = update_arguments('-f', format_string)
         run_program(executable_path, arguments, runtime)
-        output_text.config(state=tk.DISABLED)
         # Close the window on Esc key press
         root.bind('<Escape>', lambda event: root.destroy())
         # Increase/decrease font with +/-
