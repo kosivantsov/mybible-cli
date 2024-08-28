@@ -18,12 +18,10 @@ ln -s $(pwd)/mybible-cli.py $HOME/bin/mybible-cli
 
 This way you could run it by simply invoking `mybible-cli`, and it would update automatically when you pull changes in your local copy.
 
-If you use MS Windows and don't have Python installed, it's still possible to use the script. Download the [Windows build](https://github.com/kosivantsov/mybible-cli/releases/download/latest/mybible-cli_windows.zip),
-unpack somewhere, and run `mybible-cli.exe` in the unpacked folder. When the zip is unpacked, you'll find `mybible-cli.exe` and a subfolder named `_internal`. Both are needed for the program to run.
+If you use MS Windows and don't have Python installed, it's still possible to use the script. [Download](https://github.com/kosivantsov/mybible-cli/releases/latest/) the Windows build (look for a file named `mybible-cli.zip`),
+unpack it somewhere, and run `mybible-cli.exe` in the unpacked folder. When the zip is unpacked, you'll find `mybible-cli.exe` and a subfolder named `_internal`. Both are needed for the program to run.
 
 For the program to be useful (whether as a script or a Windows executable), you must have at least one MyBible module.
-
-
 
 # Usage
 
@@ -31,7 +29,8 @@ This script/application can be used directly on the command line, or used in oth
 
 ## First run
 
-When run for the first time (unless `-h`, `--help`, or `--helpformat` arguments were used), it will ask to specify a path to the folder with MyBible modules. The modules folder can be changed at any time using the `-p`, `--path` argument.
+When run for the first time (unless `-h`, `--help`, or `--helpformat` arguments were used), it will ask to specify a path to the folder with MyBible modules. The modules folder can be changed at any time using the `-p`, `--path` argument.  
+When run for the first time with `--gui`, a GUI filechooser will open to select the modules folder. 
 
 ## Help messages
 
@@ -73,8 +72,9 @@ Running the script without any arguments will produce a short help message. Run 
         Reports duplicates in the specified tsv file
   --t2j &lt;TSV_FILE&gt;, --tsv-to-json &lt;TSV_FILE&gt;
         Converts a tsv file to json (to use as a mapping file)</code>
+  --gui
+        Outputs text in a GUI window
 </details>
-
 
 ## Listing available modules
 
@@ -82,12 +82,16 @@ The script can list all the installed modules with `-L`. The list will be sorted
 
 <div align="center"><img src="screenshots/list.png" width="50%" alt="List" title="List"></div>
 
+
 ## Getting text of a Bible reference
 
 The most common usage would be calling the script with a module name and a reference to get the required text:  
 `mybible-cli -m "KJV+" -r "Jn 11:35"`  
 If a parameter passed to the script contains a space or a character that can have a special meaning for the shell, it needs to be quoted.  
-The script understands only the colon Bible notation without letters and parenthesis in the chapter and verse part. Chapter and verse numbers could be omitted to output an entire book or chapter. Blocks should be separated by commas or semicolons. Ranges are marked with a minus. Spaces in ranges are permitted. Periods will be ignored.
+The script understands only the colon Bible notation without letters and parenthesis in the chapter and verse part. Chapter and verse numbers could be omitted to output an entire book or chapter. Blocks should be separated by commas or semicolons. Ranges are marked with a minus. Spaces in ranges are permitted. Periods will be ignored.  
+If `-m "<MODULE_NAME>"` is omitted in the command, the script will use the last used module.
+`mybible-cli -m "KJV+" -r "Jn 11:35" --gui` will output the text in a GUI window where it is possible to view the requested text in any of the installed modules without running the command again.
+
 
 ## Output format
 
@@ -109,6 +113,11 @@ Text of the reference can be output in five different ways:
 ![Default output](screenshots/default_output.png "Default output")
 ![ANSI colors](screenshots/ansi_colors.png "ANSI colors")
 
+The GUI output can be formatted too, either on the command line or by providing the format string in a dialog box. The format string specified in GUI will be saved as default.
+
+![GUI window](screenshots/GUI_window.png "GUI Window")
+
+
 ## Bible book names and abbreviations
 
 Bible book names and abbreviations are looked up in a list provided within the script. During the first run, the list is saved as `mapping.json` in the configuration directory and could be used to create custom lookup lists.
@@ -123,15 +132,18 @@ The script has three arguments to help with creating custom files to look up Bib
 
 `json-to-tsv` and `tsv-to-json` output the converted file in the same location as the input file, with the same file name but different extension. No check for file extensions or data is performed during conversion, so it's possible to convert wrong data to wrong formats.
 
+
 ## Accessing config and MyBible modules folders
 
 The script allows opening its config folder and the folder with the MyBible modules in the default file manager. There are two arguments for that:
 * `--open-config-folder`
 * `--open-module-folder`
 
+
 ## Localized version of the script
 
 This script's UI strings can be localized. The script will read its localization from a file `l10n/<lang>.properties` located in the configuration folder, where `<lang>` is a language code. If there is a .properties file with the same filename as the system's locale language code that file will be used. Any strings missing from the file will be output as they are hardcoded in the script. At the moment, only `en.properties` and `uk.properties` are available. Localization files have to be copied manually. 
+
 
 # Building an executable to run without Python installation
 
@@ -142,5 +154,7 @@ it's only purpose is to compile the script into a binary.
 1. Activate the venv: `source $HOME/pyinstaller-venv/Scripts/activate` or `cd $HOME; .\pyinstaller-venv\Scripts\activate`
 1. Install pyinstaller: `pip3 install pyinstaller`
 1. Go to `mybible-cli` source folder and build the binary: `cd src/mybible-cli; pyinstaller mybible-cly.spec`
+
+On Windows you may also use `buildWindows.cmd` that automates the process.
 
 A folder with the executable and its dependencies will be found under `dist` subfolder.
