@@ -1642,7 +1642,7 @@ def main():
         verses_count = load_verses_count(allverses_file_path)
         ranges = parse_range(reference, load_mapping(mapping_file), verses_count, load_mapping(abbrs_file_path))
         if isinstance(ranges, str) and ranges == invalid_reference:
-            print(no_verse_ouput.format(reference=args.reference), ranges.lower())
+            print("✘", no_verse_ouput.format(reference=args.reference), ranges.lower())
             return
         number_of_verses = calculate_verses_in_range(ranges, verses_count)
         verses_data = query_verses(module_path, ranges)

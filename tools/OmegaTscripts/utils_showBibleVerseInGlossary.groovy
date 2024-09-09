@@ -1,4 +1,4 @@
-/* :name=Utils - Show Bible Verse :description=Shows Bible verse in the glossary pane
+/* :name=Utils - Show Bible in Glossary :description=Shows Bible verse in the glossary pane
  * @author  Kos Ivantsov
  * @date    2021-11-13 (based on diatheke and Sword modules)
  * @update  2024-08-16 (uses utils_BibleSetup.groovy to set up mybible-cli and a MyBible module for the project)
@@ -88,7 +88,7 @@ def gui() {
         text = text.join(' ')
 
         // check for errors in the output (it would contain an ANSI seq.)
-        if (text.contains('[1m')) {
+        if (text.contains('✘')) {
             console.println("Couldn't find text for ${ref}")
             //glossaryItem = ""
         } else {
