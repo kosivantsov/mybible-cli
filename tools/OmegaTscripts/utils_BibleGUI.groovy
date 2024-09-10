@@ -1,11 +1,14 @@
 /* :name=Utils - Show Bible GUI :description=Shows Bible verse in the glossary pane
  * @author  Kos Ivantsov
  *          Yu Tang (KeyListener part is taken from activate_source_text.groovy)
+ * 
  * @date    2021-11-13 (based on diatheke and Sword modules)
+ * @version 0.5
+ * 
  * @update  2024-08-16 (uses utils_BibleSetup.groovy to set up mybible-cli and a MyBible module for the project)
  * @update  2024-08-17 (improved logic to determine Bible references)
  * @update  2024-09-07 (register a key shortcut to pop up the Bible window)
- * @version 0.4
+ * @update  2024-09-10 (fix HTML output on Windows, remove/readd keyListener on reload)
  */
 
 import groovy.transform.Field
@@ -195,11 +198,27 @@ def setupBible() {
 }
 
 void showDialog() {
+    // Get fonts and colors
     textFont = Preferences.getPreference("source_font")
+    if ( ! textFont || textFont == "__DEFAULT__") {
+        textFont = "Dialog"
+    }
     textFontSize = Preferences.getPreference("source_font_size")
+    if ( ! textFontSize || textFontSize == "__DEFAULT__") {
+        textFontSize = 12
+    }
     bgColor = Preferences.getPreference("COLOR_BACKGROUND")
+    if ( ! bgColor || bgColor == "__DEFAULT__") {
+        bgColor = "#FFFFFF"
+    }
     fgColor =Preferences.getPreference("COLOR_UNTRANSLATED_FG")
+    if ( ! fgColor || fgColor == "__DEFAULT__") {
+        fgColor = "#000000"
+    }
     verseNumberColor = Preferences.getPreference("COLOR_PLACEHOLDER")
+    if ( ! verseNumberColor || verseNumberColor == "__DEFAULT__") {
+        verseNumberColor = "#7F7F7F"
+    }
     try {
         SwingUtilities.invokeLater {
             // check if project is open
@@ -264,11 +283,24 @@ void showDialog() {
                 ref = ref.replaceAll(/–/, /\-/)
                 ref = ref.trim()
                 ref = ref.replaceAll(/[\:\;\.\,]$/, '')
-                format = """-f <p style="font-size: ${textFontSize.toInteger() - 2}px; color: ${fgColor};"><span style="font-size: ${textFontSize.toInteger() - 5}px; font-style: italic; color: ${verseNumberColor};"><sup>%a %c:%v</sup></span> %t</p>"""
+                format = """-f %a %c:%v %t"""
+                htmlBeforeNumbers = """<p style="font-size: ${textFontSize.toInteger() - 2}px; color: ${fgColor};"><span style="font-size: ${textFontSize.toInteger() - 5}px; font-style: italic; color: ${verseNumberColor};"><sup>"""
+                htmlAfterNumbers = """</sup></span>"""
+                htmlAfterText = "</p>"
                 command = [exeFile, "-m", module, "-r", ref, format]
                 process = command.execute()
                 text = process.in.newReader('UTF-8').text.readLines()
-                text = text.join('\n')
+                modifiedText = []
+                text.each {
+                    verse = it.replaceAll(/^(.+\d+:\d+)/) { match ->
+                        "<p style=\"font-size: ${textFontSize.toInteger() - 2}px; color: ${fgColor};\">" +
+                        "<span style=\"font-size: ${textFontSize.toInteger() - 4}px; font-style: italic; color: ${verseNumberColor};\">" +
+                        "<sup>${match[1]}</sup></span>"
+                    }
+                    verse = verse.replaceAll(/(.)$/, /$1<\/p>/)
+                    modifiedText.add(verse)
+                }
+                text = modifiedText.join('\n')
 
                 // check for errors in the output (it would contain an ANSI seq.)
                 if (text.contains('✘')) {
@@ -412,7 +444,6 @@ class BibleWindowController implements IProjectEventListener {
                 break
             case PROJECT_CHANGE_TYPE.CLOSE:
                 uninstallKeyListener()
-                //Core.editor.editor.removeKeyListener _listener
                 break
         }
     }
@@ -424,9 +455,8 @@ class BibleWindowController implements IProjectEventListener {
     void uninstallKeyListener() {
         def keyListeners = Core.editor.editor.getKeyListeners()
         keyListeners.each { listener ->
-            // Check if the class name contains 'KeyAdapter1_groovyProxy'
+            // Check if the class name contains 'BibleGUIKeyListener' and remove it from Core.editor.editor
             if (listener.getClass().getName().contains("BibleGUIKeyListener")) {
-                // Remove the listener from Core.editor.editor
                 Core.editor.editor.removeKeyListener(listener)
             }
         }

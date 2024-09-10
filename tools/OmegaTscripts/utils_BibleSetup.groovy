@@ -1,8 +1,10 @@
 /* :name = Utils - Bible Setup :description=Setup bible.ini globally and per-project to use mybible-cli and a desired module
  * @author  Kos Ivantsov
  * @date    2024-08-16
+ * @version 0.4
+ * 
  * @update  2024-08-17 // Check for MyBible modules path
- * @version 0.3
+ * @update  2024-09-10 // Fix UTF-8 output on Windows
  */
 
 import groovy.json.JsonOutput
@@ -141,9 +143,12 @@ if (!prop) {
     module = moduleLine ? moduleLine.split('=')[1].trim() : ""
     format = formatLine ? formatLine.split('=')[1].trim() : ""
     processList = [exePath, '--simple-list'].execute()
-    output = new StringBuffer()
-    error = new StringBuffer()
-    processList.consumeProcessOutput(output, error)
+    outputStream = new StringBuffer()
+    errorStream = new StringBuffer()
+    output = processList.inputStream.getText("UTF-8")
+    error = processList.errorStream.getText("UTF-8")
+    
+    processList.consumeProcessOutput(outputStream, errorStream)
     watcher = Thread.start {
         processList.waitFor()
     }
