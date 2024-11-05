@@ -2,7 +2,7 @@
 
 * ## [OmegaT scripts to get text from MyBible modules](./OmegaTscripts)
 
-     Groovy scripts designed to be used in [OmegaT](https://omegat.org). They allow to get text for specified references using a selected module, without calling `mybible-cli` manually.
+     Groovy scripts designed to be used in [OmegaT](https://omegat.org). They allow to get text for specified references from a selected module without calling `mybible-cli` manually.
 
 * ## [OS-specific tools to show Bible text](./scripts)
 
