@@ -1,3 +1,4 @@
+![mybible-cli icon](icons/icon.png "mybible-cli icon")
 # About
 
 `mybible-cli.py` is a command line utility to query [MyBible.zone](https://mybible.zone/en/) modules. It has been inspired by [diatheke](https://wiki.crosswire.org/Frontends:Diatheke) – a command line utility for [Crosswire Sword](http://www.crosswire.org/sword/index.jsp) modules.
