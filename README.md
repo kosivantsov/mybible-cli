@@ -114,7 +114,7 @@ Text of the reference can be output in five different ways:
 ![Default output](screenshots/default_output.png "Default output")
 ![ANSI colors](screenshots/ansi_colors.png "ANSI colors")
 
-The GUI output can be formatted too, either on the command line or by providing the format string in a dialog box. The format string specified in GUI will be saved as default.
+The GUI output can be formatted too, either on the command line or by providing the format string in the dedicated dialog box. The format string specified in GUI will be saved as default.
 
 ![GUI window](screenshots/GUI_window.png "GUI Window")
 
